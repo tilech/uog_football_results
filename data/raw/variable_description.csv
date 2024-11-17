@@ -1,0 +1,140 @@
+Variable,Description
+Div,League Division
+Date,Match Date (yyyy-mm-dd)
+Time,Time of match kick off
+HomeTeam,Home Team
+AwayTeam,Away Team
+FTHG,Full Time Home Team Goals
+FTAG,Full Time Away Team Goals
+FTR,Full Time Result (H=Home Win - D=Draw - A=Away Win)
+HTHG,Half Time Home Team Goals
+HTAG,Half Time Away Team Goals
+HTR,Half Time Result (H=Home Win - D=Draw - A=Away Win)
+HS,Home Team Shots
+AS,Away Team Shots
+HST,Home Team Shots on Target
+AST,Away Team Shots on Target
+HC,Home Team Corners
+AC,Away Team Corners
+HF,Home Team Fouls Committed
+AF,Away Team Fouls Committed
+HY,Home Team Yellow Cards
+AY,Away Team Yellow Cards
+HR,Home Team Red Cards
+AR,Away Team Red Cards
+B365H,Bet365 home win odds
+B365D,Bet365 draw odds
+B365A,Bet365 away win odds
+B365CH,Bet365 home win closing odds
+B365CD,Bet365 draw clsoing odds
+B365CA,Bet365 away win closing odds
+BSH,Blue Square home win odds
+BSD,Blue Square draw odds
+BSA,Blue Square away win odds
+BWH,Bet&Win home win odds
+BWD,Bet&Win draw odds
+BWA,Bet&Win away win odds
+BWCH,Bet&Win home win closing odds
+BWCD,Bet&Win draw closing odds
+BWCA,Bet&Win away win closing odds
+GBH,Gamebookers home win odds
+GBD,Gamebookers draw odds
+GBA,Gamebookers away win odds
+IWH,Interwetten home win odds
+IWD,Interwetten draw odds
+IWA,Interwetten away win odds
+IWCH,Interwetten home win closing odds
+IWCD,Interwetten draw closing odds
+IWCA,Interwetten away win closing odds
+LBH,Ladbrokes home win odds
+LBD,Ladbrokes draw odds
+LBA,Ladbrokes away win odds
+PSH,Pinnacle home win odds
+PSD,Pinnacle draw odds
+PSA,Pinnacle away win odds
+PSCH,Pinnacle home win closing odds
+PSCD,Pinnacle draw closing odds
+PSCA,Pinnacle away win closing odds
+SBH,Sportingbet home win odds
+SBD,Sportingbet draw odds
+SBA,Sportingbet away win odds
+SJH,Stan James home win odds
+SJD,Stan James draw odds
+SJA,Stan James away win odds
+VCH,VC Bet home win odds
+VCD,VC Bet draw odds
+VCA,VC Bet away win odds
+VCCH,VC Bet home win closing odds
+VCCD,VC Bet draw closing odds
+VCCA,VC Bet away win closing odds
+WHH,William Hill home win odds
+WHD,William Hill draw odds
+WHA,William Hill away win odds
+WHCH,William Hill home win closing odds
+WHCD,William Hill draw closing odds
+WHCA,William Hill away win closing odds
+Bb1X2,Number of BetBrain bookmakers used to calculate match odds averages and maximums
+BbMxH,Betbrain maximum home win odds
+BbAvH,Betbrain average home win odds
+BbMxD,Betbrain maximum draw odds
+BbAvD,Betbrain average draw win odds
+BbMxA,Betbrain maximum away win odds
+BbAvA,Betbrain average away win odds
+MaxH,Market maximum home win odds
+MaxD,Market maximum draw win odds
+MaxA,Market maximum away win odds
+MaxCH,Market maximum home win closing odds
+MaxCD,Market maximum draw win closing odds
+MaxCA,Market maximum away win closing odds
+AvgH,Market average home win odds
+AvgD,Market average draw win odds
+AvgA,Market average away win odds
+AvgCH,Market average home win closing odds
+AvgCD,Market average draw win closing odds
+AvgCA,Market average away win closing odds
+BbOU,Number of BetBrain bookmakers used to calculate over/under 2.5 goals (total goals) averages and maximums
+BbAH,Number of BetBrain bookmakers used to Asian handicap averages and maximums
+BbAHh,Betbrain size of handicap (home team)
+AHh,Market size of handicap (home team) (since 2019/2020)
+AHCh,Market size of handicap closing (home team) (since 2019/2020)
+BbMxAHH,Betbrain maximum Asian handicap home team odds
+BbAvAHH,Betbrain average Asian handicap home team odds
+BbMxAHA,Betbrain maximum Asian handicap away team odds
+BbAvAHA,Betbrain average Asian handicap away team odds
+B365AHH,Bet365 Asian handicap home team odds
+B365AHA,Bet365 Asian handicap away team odds
+B365CAHH,Bet365 Asian handicap home team closing odds
+B365CAHA,Bet365 Asian handicap away team closing odds
+PAHH,Pinnacle Asian handicap home team odds
+PAHA,Pinnacle Asian handicap away team odds
+PCAHH,Pinnacle Asian handicap home team closing odds
+PCAHA,Pinnacle Asian handicap away team closing odds
+MaxAHH,Market maximum Asian handicap home team odds
+MaxAHA,Market maximum Asian handicap away team odds
+MaxCAHH,Market maximum Asian handicap home team closing odds
+MaxCAHA,Market maximum Asian handicap away team closing odds  
+AvgAHH,Market average Asian handicap home team odds
+AvgAHA,Market average Asian handicap away team odds
+AvgCAHH,Market average Asian handicap home team closing odds
+AvgCAHA,Market average Asian handicap away team closing odds
+Country,Country of division
+Avg.2.5,Market average under 2.5 goals
+Avg.2.5.1,Market average over 2.5 goals
+AvgC.2.5,Market average under 2.5 goals closing
+AvgC.2.5.1,Market average over 2.5 goals closing
+B365.2.5,Bet365 under 2.5 goals
+B365.2.5.1,Bet365 over 2.5 goals
+B365C.2.5,Bet365 under 2.5 goals closing
+B365C.2.5.1,Bet365 over 2.5 goals closing
+BbAv.2.5,Betbrain average under 2.5 goals
+BbAv.2.5.1,Betbrain average over 2.5 goals
+BbMx.2.5,Betbrain maximum under 2.5 goals
+BbMx.2.5.1,Betbrain maximum over 2.5 goals
+Max.2.5,Market maximum under 2.5 goals
+Max.2.5.1,Market maximum over 2.5 goals
+MaxC.2.5,Market maximum under 2.5 goals closing
+MaxC.2.5.1,Market maximum over 2.5 goals closing
+P.2.5,Pinnacle under 2.5 goals
+P.2.5.1,Pinnacle over 2.5 goals
+PC.2.5,Pinnacle under 2.5 goals closing
+PC.2.5.1,Pinnacle over 2.5 goals closing

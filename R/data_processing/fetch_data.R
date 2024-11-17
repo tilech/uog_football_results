@@ -3,7 +3,7 @@ library(dplyr)
 
 # Parameters
 country <- "germany"
-all_columns = FALSE
+all_columns = TRUE
 
 # File paths
 input_path <- paste0("data/raw/", country)
@@ -41,6 +41,9 @@ combine_csv_files <- function(input_path, all_columns = TRUE) {
 }
 
 combined_data <- combine_csv_files(input_path, all_columns = all_columns)
+
+# Remove columns that are all NA using dplyr
+combined_data <- combined_data %>% select(where(~ !all(is.na(.))))
 
 # Save the combined data frame as an RDS file
 saveRDS(combined_data, file = output_path)
