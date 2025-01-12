@@ -3,7 +3,7 @@ library(dplyr)
 
 # Parameters
 country <- "germany"
-all_columns = TRUE
+all_columns = FALSE
 
 # File paths
 input_path <- paste0("data/raw/", country)
@@ -15,7 +15,18 @@ combine_csv_files <- function(input_path, all_columns = TRUE) {
   csv_files <- list.files(path = input_path, pattern = "\\.csv$", full.names = TRUE)
   
   # Read each CSV file into a list of dataframes
-  data_list <- lapply(csv_files, read.csv, stringsAsFactors = FALSE)
+  data_list <- lapply(csv_files, function(file) {
+    df <- read.csv(file, stringsAsFactors = FALSE)
+    
+    # Create new date column which is in Date format
+    df$Date2 <- dmy(df$Date)
+    
+    # Add the "Season" column as the maximum year of "Date" in the file
+    max_year <- max(year(df$Date2), na.rm = TRUE)
+    df$Season <- max_year
+    
+    return(df)
+  })
   
   if (all_columns) {
     # Combine all dataframes and fill missing columns with NA
@@ -36,6 +47,8 @@ combine_csv_files <- function(input_path, all_columns = TRUE) {
   
   # Change date format
   combined_data$Date <- dmy(combined_data$Date)
+  
+  combined_data <- combined_data[,!(names(combined_data) %in% ("Date2"))]
   
   return(combined_data)
 }
