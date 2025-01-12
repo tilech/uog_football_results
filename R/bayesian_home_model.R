@@ -39,12 +39,12 @@ fit_home <- sampling(
 )
 
 # Extract results
-results <- extract(fit)
+results <- rstan::extract(fit)
 
 # Extract posterior distributions
-post_attack_home <- extract(fit_home, pars = "attack")$attack
-post_defense_home <- extract(fit_home, pars = "defense")$defense
-post_home_advantage_home <- extract(fit_home, pars = "home_advantage")$home_advantage
+post_attack_home <- rstan::extract(fit_home, pars = "attack")$attack
+post_defense_home <- rstan::extract(fit_home, pars = "defense")$defense
+post_home_advantage_home <- rstan::extract(fit_home, pars = "home_advantage")$home_advantage
 
 # Compute mean and credible intervals
 home_adv_summary <- apply(post_home_advantage_home, 2, function(x) {
@@ -130,23 +130,23 @@ mean_brier_score_home <- mean(brier_scores_home)
 cat("Mean Brier Score:", mean_brier_score_home, "\n")
 
 # Calculate Cumulative Probabilities for Predicted Outcomes
-cumulative_probs_pred <- t(apply(outcome_probs, 2, function(x) cumsum(c(0, x))))[,2:4]
+cumulative_probs_pred_home <- t(apply(outcome_probs_home, 2, function(x) cumsum(c(0, x))))[,2:4]
 
 # Calculate Cumulative Probabilities for Actual Outcomes
-cumulative_probs_actual <- matrix(0, nrow = length(actual_outcomes), ncol = 3)
-for (i in 1:length(actual_outcomes)) {
-  if (actual_outcomes[i] == "home_win") {
-    cumulative_probs_actual[i, ] <- c(1, 1, 1)  # Home Win
-  } else if (actual_outcomes[i] == "draw") {
-    cumulative_probs_actual[i, ] <- c(1, 1, 0)  # Draw
-  } else if (actual_outcomes[i] == "away_win") {
-    cumulative_probs_actual[i, ] <- c(1, 0, 0)  # Away Win
+cumulative_probs_actual_home <- matrix(0, nrow = length(actual_outcomes_home), ncol = 3)
+for (i in 1:length(actual_outcomes_home)) {
+  if (actual_outcomes_home[i] == "home_win") {
+    cumulative_probs_actual_home[i, ] <- c(1, 1, 1)  # Home Win
+  } else if (actual_outcomes_home[i] == "draw") {
+    cumulative_probs_actual_home[i, ] <- c(0, 1, 1)  # Draw
+  } else if (actual_outcomes_home[i] == "away_win") {
+    cumulative_probs_actual_home[i, ] <- c(0, 0, 1)  # Away Win
   }
 }
 
 # Calculate Ranked Probability Score (RPS)
-rps_scores <- rowSums((cumulative_probs_pred - cumulative_probs_actual)^2)
+rps_scores_home <- rowSums((cumulative_probs_pred_home - cumulative_probs_actual_home)^2)
 
 # Calculate Mean RPS
-mean_rps <- mean(rps_scores)
-cat("Mean Ranked Probability Score:", mean_rps, "\n")
+mean_rps_home <- mean(rps_scores_home)
+cat("Mean Ranked Probability Score:", mean_rps_home, "\n")
