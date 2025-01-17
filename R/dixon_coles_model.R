@@ -1,6 +1,7 @@
 library(dplyr)
 library(readr)
 library(stats4)
+library(lubridate)
 
 data <- readRDS("data/germany.rds")
 
