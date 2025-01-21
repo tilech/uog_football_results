@@ -9,62 +9,64 @@ library(zoo)
 
 data <- readRDS("data/germany.rds")
 
-sum9 = function(x) { sum(x[1:9])}
+sum8 = function(x) { sum(x[1:8])}
 
-# Function to calculate win rate and last 9 games win rate
+# Function to calculate win rate and last 8 games win rate
 calculate_win_rates <- function(data) {
-  # Total wins per team
-  total_wins <- data %>% 
-    mutate(Winning_Team = case_when(
-      FTHG > FTAG ~ HomeTeam,
-      FTHG < FTAG ~ AwayTeam,
-      TRUE ~ NA_character_)) %>%
-    group_by(Winning_Team) %>%
-    summarize(total_wins = n(), .groups = 'drop') %>%
-    rename(Team = Winning_Team)
   
-  # Total games per team
-  total_games <- data %>%
-    select(HomeTeam, AwayTeam) %>%
-    gather(key = "side", value = "Team") %>%
-    group_by(Team) %>%
-    summarize(total_games = n(), .groups = 'drop')
+  # Helper function to calculate sum for the last 8 games
+  sum8 <- function(x) { sum(x[1:8], na.rm = TRUE) }
   
-  # Merge total wins and total games to calculate win rate
-  team_stats <- total_wins %>%
-    left_join(total_games, by = "Team") %>%
-    mutate(win_rate = total_wins / total_games) %>%
-    select(Team, win_rate)
-  
-  # Calculate the last 10 games win rate
+  # Prepare the data with match IDs and ensure chronological order
   data <- data %>%
-    mutate(match_id = row_number()) %>% # To maintain order
-    
-    # To ensure we get the last 10 games according to Date
-    arrange(Date) %>%
+    mutate(match_id = row_number()) %>%
+    arrange(Date)
+  
+  # Calculate cumulative win, draw, and loss rates excluding the current game
+  data <- data %>%
     group_by(HomeTeam) %>%
-    mutate(last_9_home_wins = rollapply(ifelse(FTHG > FTAG, 1, 0), 10, sum9, fill = NA, align = "right"),
-           last_9_home_draws = rollapply(ifelse(FTHG == FTAG, 1, 0), 10, sum9, fill = NA, align = "right"),
-           last_9_home_losses = rollapply(ifelse(FTHG < FTAG, 1, 0), 10, sum9, fill = NA, align = "right"),
-           last_9_home_games = rollapply(!is.na(FTHG), 10, sum9, fill = NA, align = "right"),
-           home_team_win_rate_last_9 = last_9_home_wins / last_9_home_games,
-           home_team_draw_rate_last_9 = last_9_home_draws / last_9_home_games,
-           home_team_loss_rate_last_9 = last_9_home_losses / last_9_home_games) %>%
+    mutate(cum_home_wins = lag(cumsum(ifelse(FTHG > FTAG, 1, 0)), default = 0),
+           cum_home_draws = lag(cumsum(ifelse(FTHG == FTAG, 1, 0)), default = 0),
+           cum_home_losses = lag(cumsum(ifelse(FTHG < FTAG, 1, 0)), default = 0),
+           cum_home_games = lag(row_number(), default = 0),
+           home_team_win_rate = ifelse(cum_home_games > 0, cum_home_wins / cum_home_games, NA),
+           home_team_draw_rate = ifelse(cum_home_games > 0, cum_home_draws / cum_home_games, NA),
+           home_team_loss_rate = ifelse(cum_home_games > 0, cum_home_losses / cum_home_games, NA)) %>%
     ungroup() %>%
     group_by(AwayTeam) %>%
-    mutate(last_9_away_wins = rollapply(ifelse(FTAG > FTHG, 1, 0), 10, sum9, fill = NA, align = "right"),
-           last_9_away_draws = rollapply(ifelse(FTAG == FTHG, 1, 0), 10, sum9, fill = NA, align = "right"),
-           last_9_away_losses = rollapply(ifelse(FTAG < FTHG, 1, 0), 10, sum9, fill = NA, align = "right"),
-           last_9_away_games = rollapply(!is.na(FTAG), 10, sum9, fill = NA, align = "right"),
-           away_team_win_rate_last_9 = last_9_away_wins / last_9_away_games,
-           away_team_draw_rate_last_9 = last_9_away_draws / last_9_away_games,
-           away_team_loss_rate_last_9 = last_9_away_losses / last_9_away_games) %>%
+    mutate(cum_away_wins = lag(cumsum(ifelse(FTAG > FTHG, 1, 0)), default = 0),
+           cum_away_draws = lag(cumsum(ifelse(FTAG == FTHG, 1, 0)), default = 0),
+           cum_away_losses = lag(cumsum(ifelse(FTAG < FTHG, 1, 0)), default = 0),
+           cum_away_games = lag(row_number(), default = 0),
+           away_team_win_rate = ifelse(cum_away_games > 0, cum_away_wins / cum_away_games, NA),
+           away_team_draw_rate = ifelse(cum_away_games > 0, cum_away_draws / cum_away_games, NA),
+           away_team_loss_rate = ifelse(cum_away_games > 0, cum_away_losses / cum_away_games, NA)) %>%
+    ungroup()
+  
+  # Calculate the last 8 games win rates
+  data <- data %>%
+    group_by(HomeTeam) %>%
+    mutate(last_8_home_wins = rollapply(ifelse(FTHG > FTAG, 1, 0), 9, sum8, fill = NA, align = "right"),
+           last_8_home_draws = rollapply(ifelse(FTHG == FTAG, 1, 0), 9, sum8, fill = NA, align = "right"),
+           last_8_home_losses = rollapply(ifelse(FTHG < FTAG, 1, 0), 9, sum8, fill = NA, align = "right"),
+           last_8_home_games = rollapply(!is.na(FTHG), 9, sum8, fill = NA, align = "right"),
+           home_team_win_rate_last_8 = last_8_home_wins / last_8_home_games,
+           home_team_draw_rate_last_8 = last_8_home_draws / last_8_home_games,
+           home_team_loss_rate_last_8 = last_8_home_losses / last_8_home_games) %>%
     ungroup() %>%
-    left_join(team_stats, by = c("HomeTeam" = "Team")) %>%
-    rename(c('home_team_win_rate'='win_rate')) %>%
-    left_join(team_stats, by = c("AwayTeam" = "Team")) %>%
-    rename(c('away_team_win_rate'='win_rate')) %>%
-    select(-ends_with("wins"), -ends_with("games"))
+    group_by(AwayTeam) %>%
+    mutate(last_8_away_wins = rollapply(ifelse(FTAG > FTHG, 1, 0), 9, sum8, fill = NA, align = "right"),
+           last_8_away_draws = rollapply(ifelse(FTAG == FTHG, 1, 0), 9, sum8, fill = NA, align = "right"),
+           last_8_away_losses = rollapply(ifelse(FTAG < FTHG, 1, 0), 9, sum8, fill = NA, align = "right"),
+           last_8_away_games = rollapply(!is.na(FTAG), 9, sum8, fill = NA, align = "right"),
+           away_team_win_rate_last_8 = last_8_away_wins / last_8_away_games,
+           away_team_draw_rate_last_8 = last_8_away_draws / last_8_away_games,
+           away_team_loss_rate_last_8 = last_8_away_losses / last_8_away_games) %>%
+    ungroup()
+  
+  # Remove unnecessary columns for cleaner output
+  data <- data %>%
+    select(-starts_with("cum"), -ends_with("wins"), -ends_with("draws"), -ends_with("losses"), -ends_with("games"))
   
   return(data)
 }
@@ -84,8 +86,8 @@ data <- data %>%
   mutate(HomeTeam = as.numeric(HomeTeam),
          AwayTeam = as.numeric(AwayTeam))
 
-data <- data[!(is.na(data$home_team_win_rate_last_9)), ]
-data <- data[!(is.na(data$away_team_win_rate_last_9)), ]
+data <- data[!(is.na(data$home_team_win_rate_last_8)), ]
+data <- data[!(is.na(data$away_team_win_rate_last_8)), ]
 
 data_train <- data %>%
   filter(Date < as.Date("2017-07-01") |
@@ -96,24 +98,34 @@ data_test <- data %>%
            month(Date) < 7)
 
 # Normalizing the data (important for neural networks)
-train_features <- as.matrix(data_train[, c("home_team_win_rate_last_9",
-                                           "home_team_draw_rate_last_9",
-                                           "home_team_loss_rate_last_9",
+train_features <- as.matrix(data_train[, c("home_team_win_rate_last_8",
+                                           "home_team_draw_rate_last_8",
+                                           "home_team_loss_rate_last_8",
                                            "home_team_win_rate",
-                                           "away_team_win_rate_last_9",
-                                           "away_team_draw_rate_last_9",
-                                           "away_team_loss_rate_last_9",
-                                           "away_team_win_rate")])
+                                           "home_team_draw_rate",
+                                           "home_team_loss_rate",
+                                           "away_team_win_rate_last_8",
+                                           "away_team_draw_rate_last_8",
+                                           "away_team_loss_rate_last_8",
+                                           "away_team_win_rate",
+                                           "away_team_draw_rate",
+                                           "away_team_loss_rate"
+                                           )])
 train_labels <- as.matrix(data_train[, c("HomeWin", "Draw", "AwayWin")])
 
-test_features <- as.matrix(data_test[, c("home_team_win_rate_last_9",
-                                         "home_team_draw_rate_last_9",
-                                         "home_team_loss_rate_last_9",
-                                         "home_team_win_rate",
-                                         "away_team_win_rate_last_9",
-                                         "away_team_draw_rate_last_9",
-                                         "away_team_loss_rate_last_9",
-                                         "away_team_win_rate")])
+test_features <- as.matrix(data_test[, c("home_team_win_rate_last_8",
+                                          "home_team_draw_rate_last_8",
+                                          "home_team_loss_rate_last_8",
+                                          "home_team_win_rate",
+                                          "home_team_draw_rate",
+                                          "home_team_loss_rate",
+                                          "away_team_win_rate_last_8",
+                                          "away_team_draw_rate_last_8",
+                                          "away_team_loss_rate_last_8",
+                                          "away_team_win_rate",
+                                          "away_team_draw_rate",
+                                          "away_team_loss_rate"
+)])
 test_labels <- as.matrix(data_test[, c("HomeWin", "Draw", "AwayWin")])
 
 model <- keras_model_sequential() %>%

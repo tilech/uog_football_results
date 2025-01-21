@@ -1,0 +1,57 @@
+---
+title: "Predicting football results"
+subtitle: "Supervision Meeting 3"
+author: "Timo Lechner"
+date: "2025-01-19"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exploratory Data Analysis
+
+In the following we want to analyse football results from the German Bundesliga,
+beginning with the season 2005/06, up to the season 2023/24. Data is taken from
+the website [https://www.football-data.co.uk/data.php](https://www.football-data.co.uk/data.php).
+Specifically, we want to create different models to predict the full time result
+of the individual games. From the perspective of the home team a game can have
+three different results: win, draw or loss. The result is given in the column "FTR" (Full Time Result).
+Furthermore, the result can be obtained by looking at the goals scored by the home and away team, respectively.
+This is given by the columns "FTHG" and "FTAG" (Full Time Home/Away Goals).
+
+The Bundesliga consists of 18 teams and one season has 34 matchdays. This leads to
+304 games per season. We have data for 19 seasons available and hence 5814 entries
+in total. Since the bottom two teams of each season get relegated to the second
+league and two teams from the second league get promoted,
+we have 36 teams that played at least once in the German Bundesliga in
+the last 19 seasons.
+
+This format prevents us from trivially splitting our data into a training and a
+test data set from a specific season on, since training data for some teams might
+not be available if they got promoted in a more recent season only. Hence, we
+will include the first few matches of a season as well in our training data to
+improve our data basis. More specifically, we will use all data until the season
+2017/18 as training data. From this season on, games that were played between January
+and June fall into our test data set. This approximately corresponds to the second
+half of the season. This way we end up with 4679 entries for our training data 
+and 1135 entries for the test data, which reflects a proportion of $80.5\% : 19.5\%$.
+
+We will develop four different models to predict the outcome (home win, draw, away win)
+of the individual games. The first one is a classic Dixon-Coles model which includes
+two independent Poisson distributions together with a factor to capture low-scoring
+matches and a factor that captures the home team advantage.
+The second and third model are Bayesian models, following the approach
+of Baio & Blangiardo, where Bayesian inference is used on Poisson distributions.
+The second model will have a general home team advantage factor, while the third model
+has a team-specific home team advantage factor. The German Bundesliga is known
+for its high attendance in stadiums and historical teams and we can analyse if this
+effect is different between the clubs and if it has an effect on the prediction as well.
+Lastly, we will develop a neural network using TensorFlow and see how this performs
+in comparison to the "standard" models. As features we will use the performance
+of the home/away team in the last 8 games as well as the performance in the whole past.
+
+
+
+
