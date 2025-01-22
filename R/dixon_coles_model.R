@@ -21,7 +21,8 @@ teams <- unique(c(data_train$HomeTeam, data_train$AwayTeam))
 initial_params <- c(
   attack = setNames(rep(0, length(teams)), teams),
   defense = setNames(rep(0, length(teams)), teams),
-  rho = 0.01  # Dixon-Coles adjustment parameter
+  home_advantage = 0,  # Add home advantage parameter
+  rho = 0  # Dixon-Coles adjustment parameter
 )
 
 # Define the Dixon-Coles likelihood function with team-specific parameters
@@ -29,6 +30,7 @@ dixon_coles_likelihood <- function(params, data, teams) {
   # Extract attack and defense parameters for teams
   attack <- params[paste0("attack.", teams)]
   defense <- params[paste0("defense.", teams)]
+  home_advantage <- params["home_advantage"]  # Home advantage parameter
   rho <- params["rho"]
   
   likelihood <- 0
@@ -39,7 +41,7 @@ dixon_coles_likelihood <- function(params, data, teams) {
     away_goals <- data$FTAG[i]
     
     # Calculate lambda (expected goals for home team) and mu (away team)
-    lambda <- exp(attack[paste0("attack.", home_team)] - defense[paste0("defense.", away_team)])
+    lambda <- exp(attack[paste0("attack.", home_team)] + home_advantage - defense[paste0("defense.", away_team)])
     mu <- exp(attack[paste0("attack.", away_team)] - defense[paste0("defense.", home_team)])
     
     # Poisson probabilities
@@ -48,9 +50,13 @@ dixon_coles_likelihood <- function(params, data, teams) {
     
     # Dixon-Coles adjustment for low-score interactions
     if (home_goals == 0 & away_goals == 0) {
-      adj_factor <- 1 - rho
+      adj_factor <- 1 - lambda*mu*rho
+    } else if (home_goals == 1 & away_goals == 0) {
+      adj_factor <- 1 + mu*rho
+    } else if (home_goals == 0 & away_goals == 1) {
+      adj_factor <- 1 + lambda*rho
     } else if (home_goals == 1 & away_goals == 1) {
-      adj_factor <- 1 + rho
+      adj_factor <- 1 - rho
     } else {
       adj_factor <- 1
     }
@@ -68,8 +74,8 @@ opt <- optim(
   data = data_train,
   teams = teams,
   method = "L-BFGS-B",
-  lower = c(rep(-Inf, length(initial_params) - 1), -0.1),  # Rho lower bound
-  upper = c(rep(Inf, length(initial_params) - 1), 0.1),     # Rho upper bound
+  lower = c(rep(-Inf, length(initial_params) - 1), -0.2),  # Rho lower bound
+  upper = c(rep(Inf, length(initial_params) - 1), 0.2),     # Rho upper bound
 )
 
 # Extract optimized parameters
@@ -88,8 +94,10 @@ calculate_probabilities <- function(lambda, mu, rho) {
     for (y in 0:max_goals) {
       # Dixon-Coles adjustment for low-score interactions
       adjustment <- ifelse(
-        (x == 0 & y == 0), 1 - rho,
-        ifelse((x == 1 & y == 1), 1 + rho, 1)
+        (x == 0 & y == 0), 1 - lambda * mu * rho,
+        ifelse((x == 1 & y == 0), 1 + mu * rho,
+               ifelse((x == 0 & y == 1), 1 + lambda * rho,
+                      ifelse((x == 1 & y == 1), 1 - rho, 1)))
       )
       prob <- dpois(x, lambda) * dpois(y, mu) * adjustment
       
@@ -111,9 +119,10 @@ calculate_probabilities <- function(lambda, mu, rho) {
 data_test <- data_test %>%
   rowwise() %>%
   mutate(
-    lambda = exp(opt_params[paste0("attack.", HomeTeam)] - opt_params[paste0("defense.", AwayTeam)]),
+    lambda = exp(opt_params[paste0("attack.", HomeTeam)] + opt_params["home_advantage"] - opt_params[paste0("defense.", AwayTeam)]),
     mu = exp(opt_params[paste0("attack.", AwayTeam)] - opt_params[paste0("defense.", HomeTeam)]),
     rho = opt_params["rho"],
+    gamma = opt_params["home_advantage"],
     probs = list(calculate_probabilities(lambda, mu, rho))
   ) %>%
   unnest_wider(probs, names_sep = ".")
@@ -165,3 +174,45 @@ overall_rps <- mean(data_test$rps)
 
 # Print the overall RPS
 print(overall_rps)
+
+# Plots
+
+# Extract attack and defense strengths into a data frame
+attack_strength <- opt_params[grepl("attack", names(opt_params))]
+defense_strength <- opt_params[grepl("defense", names(opt_params))]
+
+# Create a data frame for plotting
+data_dc_plot <- data.frame(
+  Team = teams,
+  Attack = c(attack_strength, rep(NA, length(defense_strength) - length(attack_strength))),
+  Defense = c(rep(NA, length(attack_strength) - length(defense_strength)), defense_strength)
+)
+
+# Create the plot
+ggplot(data_dc_plot, aes(x = Defense, y = Attack, label = Team)) + 
+  geom_point() + 
+  geom_text(vjust = -0.5) +
+  geom_hline(yintercept = 0, linewidth=1) +
+  geom_vline(xintercept = 0, linewidth=1) + 
+  theme_minimal() +
+  ggtitle("Attack and Defense Strength of Teams")
+
+# Save data for the attack/defense plot
+output_path = "RMD/dixon_coles/team_strength.rds"
+saveRDS(data_dc_plot, file = output_path)
+
+# Save data for the home team advantage
+output_path = "RMD/dixon_coles/home_team_factor.rds"
+saveRDS(opt_params["home_advantage"], file = output_path)
+
+# Save data for the low-score adjustment factor
+output_path = "RMD/dixon_coles/low_score_factor.rds"
+saveRDS(opt_params["rho"], file = output_path)
+
+# Save data for the brier score
+output_path = "RMD/dixon_coles/brier_score.rds"
+saveRDS(overall_brier_score, file = output_path)
+
+# Save data for the RPS
+output_path = "RMD/dixon_coles/rps.rds"
+saveRDS(overall_rps, file = output_path)
