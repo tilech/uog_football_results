@@ -9,11 +9,25 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 library(ggplot2)
+library(bayesplot)
+
 data_dc_plot <- readRDS("dixon_coles/team_strength.rds")
 home_advantage_dc <- readRDS("dixon_coles/home_team_factor.rds")
 low_score_dc <- readRDS("dixon_coles/low_score_factor.rds")
 brier_score_dc <- readRDS("dixon_coles/brier_score.rds")
 rps_dc <- readRDS("dixon_coles/rps.rds")
+
+home_advantage_posterior <- readRDS("bayesian_simple/data_density.rds")
+mcmc_trace <- readRDS("bayesian_simple/mcmc_trace.rds")
+mcmc_acf <- readRDS("bayesian_simple/mcmc_acf.rds")
+strengths_df <- readRDS("bayesian_simple/strengths_df.rds")
+brier_score_bs <- readRDS("bayesian_simple/brier_score.rds")
+rps_bs <- readRDS("bayesian_simple/rps.rds")
+
+home_adv_df <- readRDS("bayesian_extended/home_adv_df.rds")
+strengths_df_home <- readRDS("bayesian_extended/strengths_df_home.rds")
+brier_score_be <- readRDS("bayesian_extended/brier_score_home.rds")
+rps_be <- readRDS("bayesian_extended/rps_home.rds")
 ```
 
 ## Project Setting
@@ -49,8 +63,7 @@ We will develop four different models to predict the outcome (home win, draw, aw
 of the individual games. The first one is a classic Dixon-Coles model which includes
 two independent Poisson distributions together with a factor to capture low-scoring
 matches and a factor that captures the home team advantage.
-The second and third model are Bayesian models, following the approach
-of Baio & Blangiardo, where Bayesian inference is used on Poisson distributions.
+The second and third model are Bayesian models, where Bayesian inference is used on Poisson distributions.
 The second model will have a general home team advantage factor, while the third model
 has a team-specific home team advantage factor. The German Bundesliga is known
 for its high attendance in stadiums and historical teams. We can analyse if this
@@ -146,9 +159,145 @@ Running this model against our test data we receive the following values for our
 two metrics for comparison:
 
 ```{r}
+"Brier Score:"
 brier_score_dc
+
+"RPS"
 rps_dc
 ```
 
+## Simple Bayesian Model
+
+Next we want to try a Bayesian approach that combines prior knowledge with new 
+data to update beliefs, allowing for the estimation of parameters and making predictions.
+The prior distribution represents the initial beliefs about the parameters before
+observing any data. The choice of priors reflects the researcher's beliefs or 
+previous knowledge about the parameters. The Likelihood function models the 
+probability of observing the data given the parameters. It reflects how likely 
+the observed outcomes are, given certain parameter values.
+The posterior distribution is the updated belief about the parameters after
+observing the data. It is derived using Bayes' theorem:
+
+$$P(\theta | D) = \frac{P(D | \theta) P(\theta)}{P(D)}$$
+where $P(\theta | D)$ is the posterior distribution, $P(D | \theta)$ is the likelihood,
+$P(\theta)$ is the prior distribution and $P(D)$ is the marginal likelihood, 
+which is often a normalizing constant.
+
+Again, we are assuming two Poisson distributions for the number of home and away goals
+and are taking attack, defense and home advantage parameters into account.
+As new match data is observed, the model updates the estimates for the parameters 
+through the likelihood function. 
+This updating process refines the estimates of the model parameters.
+Once the posterior distributions of the parameters are obtained, predictions 
+about future match outcomes can be made. This involves simulating the number of 
+goals for each team in future matches based on the estimated parameters.
+
+For the priors we choose $N(0,1)$ distributions. Biao and Blangiardo included
+additional parameters $\mu$ for the mean and $\tau$ for the precision
+following a Gamma distribution in their model. For the sampling we will
+use 2000 iterations with a warmup phase of 1000 iterations and 4 chains in total.
+
+### Results
+
+First, let us look at the density estimate of the home advantage parameter.
+
+```{r}
+ggplot(data.frame(home_advantage_posterior), aes(x = home_advantage_posterior)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Posterior Distribution of Home Advantage", x = "Home Advantage", y = "Density")
+```
+
+The distribution is centered around $0.25$. Next, let us look at the trace plot.
+
+```{r}
+print(mcmc_trace)
+```
+
+All chains seem to converge towards the same distribution and the individual chains
+fluctuate around a stable mean. We can also check the autocorrelation plot.
+
+```{r}
+print(mcmc_acf)
+```
+
+We can see that as the lag increases, the autocorrelation drops to zero.
+
+Additionally we can have another look at the attack and defense parameters of the individual teams.
+
+```{r}
+ggplot(strengths_df, aes(x = mean_defense, y = mean_attack)) +
+  geom_point(size = 0.5) +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linewidth=0.5) +
+  geom_vline(xintercept = 0, linewidth=0.5) +
+  labs(x = "Defense",
+       y = "Attack") +
+  geom_text(aes(label = rownames(strengths_df)), vjust = -0.5, , size = 2.5) +
+  ggtitle("Attack and Defense Strength of Teams")
+
+```
+
+This shows a similar picture as the Dixon-Coles Model. The metric scores are
+also quite similar.
+
+```{r}
+"Brier Score:"
+brier_score_bs
+
+"RPS"
+rps_bs
+```
+
+## Extended Bayesian Model
+
+In the next step we want to extend our Bayesian Model by making the home team 
+advantage parameter dependent on the team. Furthermore, we add parameters that
+represent the standard deviation of the individual parameters and follow a Gamma
+distribution. The rest (e.g. sampling methods) stays the same.
+
+### Results
+
+We can again look at the attack and defense parameters of the individual teams.
+
+```{r}
+ggplot(strengths_df_home, aes(x = mean_defense, y = mean_attack)) +
+  geom_point(size = 0.5) +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linewidth=0.5) +
+  geom_vline(xintercept = 0, linewidth=0.5) +
+  labs(x = "Defense",
+       y = "Attack") +
+  geom_text(aes(label = rownames(strengths_df)), vjust = -0.5, , size = 2.5) +
+  ggtitle("Attack and Defense Strength of Teams")
+
+```
+
+Moreover, we can check how the home advantage parameter differs between the teams.
+
+```{r}
+# Plot results
+ggplot(home_adv_df, aes(x = reorder(team, mean), y = mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +
+  coord_flip() +
+  labs(title = "Team-Specific Home Advantage",
+       x = "Team", y = "Home Advantage") +
+  theme_minimal()
+```
+
+Two things immediately stand out. Union Berlin has by far the highest home advantage.
+They were unbeaten at home from February 2022 to September 2023. Nürnberg on the other
+hand has a negative home advantage, meaning they tend to play worse on their own pitch.
+
+Brier Score and RPS improved a bit in comparison to the other two models.
+
+```{r}
+"Brier Score:"
+brier_score_be
+
+"RPS"
+rps_be
+```
 
 

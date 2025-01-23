@@ -17,8 +17,8 @@ data_test <- data %>%
 
 # Prepare data for Stan
 stan_data_home <- list(
-  N = nrow(data_train),
-  N_teams = length(teams),
+  n_games = nrow(data_train),
+  n_teams = length(teams),
   home_team = data_train$home_team_id,
   away_team = data_train$away_team_id,
   home_goals = data_train$FTHG,
@@ -32,8 +32,7 @@ stan_model_home <- stan_model("R/bayesian_home.stan")
 fit_home <- sampling(
   stan_model_home,
   data = stan_data_home,
-  iter = 4000,
-  warmup = 1000,
+  iter = 2000,
   chains = 4,
   seed = 42
 )
@@ -45,6 +44,37 @@ results <- rstan::extract(fit)
 post_attack_home <- rstan::extract(fit_home, pars = "attack")$attack
 post_defense_home <- rstan::extract(fit_home, pars = "defense")$defense
 post_home_advantage_home <- rstan::extract(fit_home, pars = "home_advantage")$home_advantage
+
+# Summarize attack and defense strengths
+attack_summary_home <- summary(fit_home, pars = "attack")$summary
+defense_summary_home <- summary(fit_home, pars = "defense")$summary
+
+# Calculate mean attack and defense strengths
+mean_attack_home <- attack_summary_home[,"mean"]
+mean_defense_home <- defense_summary_home[,"mean"]
+
+# Create a data frame for plotting
+strengths_df_home <- data.frame(
+  mean_attack = mean_attack_home,
+  mean_defense = mean_defense_home
+)
+row.names(strengths_df_home) <- teams
+
+# Plot mean defense strength vs. mean attack strength
+ggplot(strengths_df_home, aes(x = mean_defense, y = mean_attack)) +
+  geom_point() +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linewidth=1) +
+  geom_vline(xintercept = 0, linewidth=1) +
+  labs(x = "Defense Strength",
+       y = "Attack Strength") +
+  geom_text(aes(label = rownames(strengths_df_home)), vjust = -0.5) +
+  ggtitle("Attack and Defense Strength of Teams")
+
+# Save data for the trace plot
+output_path = "RMD/bayesian_extended/strengths_df_home.rds"
+saveRDS(strengths_df_home, file = output_path)
+
 
 # Compute mean and credible intervals
 home_adv_summary <- apply(post_home_advantage_home, 2, function(x) {
@@ -72,6 +102,10 @@ ggplot(home_adv_df, aes(x = reorder(team, mean), y = mean)) +
   labs(title = "Team-Specific Home Advantage",
        x = "Team", y = "Home Advantage") +
   theme_minimal()
+
+# Save data for the trace plot
+output_path = "RMD/bayesian_extended/home_adv_df.rds"
+saveRDS(home_adv_df, file = output_path)
 
 # Predict outcomes for the test data
 predict_match_home <- function(home_team_id, away_team_id, attack, defense, home_advantage) {
@@ -150,3 +184,11 @@ rps_scores_home <- rowSums((cumulative_probs_pred_home - cumulative_probs_actual
 # Calculate Mean RPS
 mean_rps_home <- mean(rps_scores_home)
 cat("Mean Ranked Probability Score:", mean_rps_home, "\n")
+
+# Save data for the brier score
+output_path = "RMD/bayesian_extended/brier_score_home.rds"
+saveRDS(mean_brier_score_home, file = output_path)
+
+# Save data for the RPS
+output_path = "RMD/bayesian_extended/rps_home.rds"
+saveRDS(mean_rps_home, file = output_path)

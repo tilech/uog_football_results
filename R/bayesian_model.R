@@ -1,5 +1,7 @@
 library(rstan)
+library(tidyverse)
 library(ggplot2)
+library(bayesplot)
 
 data <- readRDS("data/germany.rds")
 
@@ -20,8 +22,8 @@ data_test <- data %>%
 
 # Prepare data for Stan
 stan_data <- list(
-  N = nrow(data_train),
-  N_teams = length(teams),
+  n_games = nrow(data_train),
+  n_teams = length(teams),
   home_team = data_train$home_team_id,
   away_team = data_train$away_team_id,
   home_goals = data_train$FTHG,
@@ -35,8 +37,7 @@ stan_model <- stan_model("R/bayesian.stan")
 fit <- sampling(
   stan_model,
   data = stan_data,
-  iter = 4000,
-  warmup = 1000,
+  iter = 2000,
   chains = 4,
   seed = 42
 )
@@ -57,7 +58,54 @@ defense_summary <- summary(fit, pars = "defense")$summary
 home_advantage_posterior <- results$home_advantage
 ggplot(data.frame(home_advantage_posterior), aes(x = home_advantage_posterior)) +
   geom_density(fill = "blue", alpha = 0.5) +
+  theme_minimal() +
   labs(title = "Posterior Distribution of Home Advantage", x = "Home Advantage", y = "Density")
+
+# Save data for the density plot
+output_path = "RMD/bayesian_simple/data_density.rds"
+saveRDS(home_advantage_posterior, file = output_path)
+
+# Trace plot for Home Advantage
+mcmc_trace <- mcmc_trace(as.array(fit), pars = "home_advantage")
+print(mcmc_trace)
+
+# Save data for the trace plot
+output_path = "RMD/bayesian_simple/mcmc_trace.rds"
+saveRDS(mcmc_trace, file = output_path)
+
+# Autocorrelation plot for Home Advantage
+mcmc_acf <- mcmc_acf(as.array(fit), pars = "home_advantage")
+print(mcmc_acf)
+
+# Save data for the trace plot
+output_path = "RMD/bayesian_simple/mcmc_acf.rds"
+saveRDS(mcmc_acf, file = output_path)
+
+# Calculate mean attack and defense strengths
+mean_attack <- attack_summary[,"mean"]
+mean_defense <- defense_summary[,"mean"]
+
+# Create a data frame for plotting
+strengths_df <- data.frame(
+  mean_attack = mean_attack,
+  mean_defense = mean_defense
+)
+row.names(strengths_df) <- teams
+
+# Plot mean defense strength vs. mean attack strength
+ggplot(strengths_df, aes(x = mean_defense, y = mean_attack)) +
+  geom_point() +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linewidth=1) +
+  geom_vline(xintercept = 0, linewidth=1) +
+  labs(x = "Defense Strength",
+       y = "Attack Strength") +
+  geom_text(aes(label = rownames(strengths_df)), vjust = -0.5) +
+  ggtitle("Attack and Defense Strength of Teams")
+
+# Save data for the trace plot
+output_path = "RMD/bayesian_simple/strengths_df.rds"
+saveRDS(strengths_df, file = output_path)
 
 
 # Predict outcomes for the test data
@@ -137,5 +185,13 @@ rps_scores <- rowSums((cumulative_probs_pred - cumulative_probs_actual)^2)
 # Calculate Mean RPS
 mean_rps <- mean(rps_scores)
 cat("Mean Ranked Probability Score:", mean_rps, "\n")
+
+# Save data for the brier score
+output_path = "RMD/bayesian_simple/brier_score.rds"
+saveRDS(mean_brier_score, file = output_path)
+
+# Save data for the RPS
+output_path = "RMD/bayesian_simple/rps.rds"
+saveRDS(mean_rps, file = output_path)
 
 
