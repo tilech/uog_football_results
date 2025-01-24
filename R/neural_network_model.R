@@ -6,6 +6,7 @@ library(keras)
 library(Metrics)
 library(lubridate)
 library(zoo)
+library(tibble)
 
 data <- readRDS("data/germany.rds")
 
@@ -109,7 +110,8 @@ train_features <- as.matrix(data_train[, c("home_team_win_rate_last_8",
                                            "away_team_loss_rate_last_8",
                                            "away_team_win_rate",
                                            "away_team_draw_rate",
-                                           "away_team_loss_rate"
+                                           "away_team_loss_rate",
+                                           "Season"
                                            )])
 train_labels <- as.matrix(data_train[, c("HomeWin", "Draw", "AwayWin")])
 
@@ -124,12 +126,20 @@ test_features <- as.matrix(data_test[, c("home_team_win_rate_last_8",
                                           "away_team_loss_rate_last_8",
                                           "away_team_win_rate",
                                           "away_team_draw_rate",
-                                          "away_team_loss_rate"
+                                          "away_team_loss_rate",
+                                         "Season"
 )])
 test_labels <- as.matrix(data_test[, c("HomeWin", "Draw", "AwayWin")])
 
+# Standardize training features
+train_features_scaled <- scale(train_features)
+
+# If you have validation or test features, you can scale them using the mean and SD from the training features
+test_features_scaled <- scale(test_features, center = attr(train_features_scaled, "scaled:center"), 
+                              scale = attr(train_features_scaled, "scaled:scale"))
+
 model <- keras_model_sequential() %>%
-  layer_dense(units = 100, activation = 'relu', input_shape = dim(train_features)[2], kernel_regularizer = regularizer_l2(0.01)) %>%
+  layer_dense(units = 100, activation = 'relu', input_shape = dim(train_features_scaled)[2], kernel_regularizer = regularizer_l2(0.01)) %>%
   layer_dense(units = 50, activation = 'relu') %>%
   layer_dropout(rate = 0.5) %>%
   layer_dense(units = 3, activation = 'softmax')
@@ -143,10 +153,10 @@ model %>% compile(
 )
 
 # Fit the model
-model %>% fit(train_features, train_labels, epochs = 100, batch_size = 10)
+model %>% fit(train_features_scaled, train_labels, epochs = 100, batch_size = 10)
 
 # Example predictions from your Keras model (probabilities)
-predictions <- model %>% predict(test_features)
+predictions <- model %>% predict(test_features_scaled)
 
 # Determine actual outcomes
 actual_outcomes <- ifelse(
@@ -194,5 +204,11 @@ rps_scores <- rowSums((cumulative_probs_pred - cumulative_probs_actual)^2)
 mean_rps <- mean(rps_scores)
 cat("Mean Ranked Probability Score:", mean_rps, "\n")
 
+# Save data for the brier score
+output_path = "RMD/neural_network/brier_score_nn.rds"
+saveRDS(mean_brier_score, file = output_path)
 
+# Save data for the RPS
+output_path = "RMD/neural_network/rps_nn.rds"
+saveRDS(mean_rps, file = output_path)
 

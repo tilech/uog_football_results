@@ -28,6 +28,9 @@ home_adv_df <- readRDS("bayesian_extended/home_adv_df.rds")
 strengths_df_home <- readRDS("bayesian_extended/strengths_df_home.rds")
 brier_score_be <- readRDS("bayesian_extended/brier_score_home.rds")
 rps_be <- readRDS("bayesian_extended/rps_home.rds")
+
+brier_score_nn <- readRDS("neural_network/brier_score_nn.rds")
+rps_nn <- readRDS("neural_network/rps_nn.rds")
 ```
 
 ## Project Setting
@@ -290,7 +293,7 @@ Two things immediately stand out. Union Berlin has by far the highest home advan
 They were unbeaten at home from February 2022 to September 2023. Nürnberg on the other
 hand has a negative home advantage, meaning they tend to play worse on their own pitch.
 
-Brier Score and RPS improved a bit in comparison to the other two models.
+Brier Score and RPS are roughly the same in comparison to the other two models.
 
 ```{r}
 "Brier Score:"
@@ -299,5 +302,63 @@ brier_score_be
 "RPS"
 rps_be
 ```
+
+## Neural Network Model
+
+We will implement our last model using neural networks. For this reason
+we need to create multiple features which could help us determine the outcome of a soccer
+match. We will therefore determine the win, draw and loss ratio of the respective
+home and away team in the past. Once for the whole past and once for the last 8
+games. This gives us enough data to train our model even for teams that were promoted recently,
+since we are always taking the second part of a season as test data. Moreover,
+we will choose the season itself as feature, since important information
+could be incorporated in there. Teams could perform well in one season and fall behind
+in another.
+
+For implementation we will use Keras. The first hidden layer consists of 100 units
+with a ReLU activation function, and L2 regularization is applied with a strength 
+of 0.01 to mitigate overfitting. The second dense layer has 50 units and also uses
+a ReLU activation function. A dropout layer follows this, randomly setting half 
+of the input units to zero during training to further prevent overfitting. 
+The output layer consists of three units representing the possible outcomes: 
+HomeWin, Draw, and AwayWin, with a softmax activation function to produce 
+probabilities that sum to one. The model is compiled using categorical crossentropy 
+as the loss function, which is suitable for multi-class classification tasks. 
+The Adam optimizer is used with a learning rate of 0.0001, and accuracy is used 
+as a metric to evaluate performance. It is trained for 100 epochs, with a 
+batch size of 10.
+
+### Results
+
+First, let us look at the results of the model training.
+
+![Visualization during model training.](neural_network/training_fit.png)
+
+It looks like convergence is happening quite fast and the number of epochs chosen
+is not too small. Brier score and RPS are a bit worse for this model.
+
+```{r}
+"Brier Score:"
+brier_score_nn
+
+"RPS"
+rps_nn
+```
+
+## Results and Outlook
+
+Overall we implemented four different models to forecast the outcome of soccer games.
+All models seem to have a similar performance. Using hypothesis testing we could find out if
+the difference between the models is significant. Furthermore, we could analyze
+where specific models performed better than others and in which games no model could
+predict the correct result to come up with further improvements. Especially the 
+Bayesian model and the Neural Network could benefit from additional features.
+
+Since we have data from bookmakers available we could also check which model
+performs best in financial terms, i.e. which (if any) would make the most money.
+Here we could also come up with an additional reference model that tries to bet using the
+bookmaker with the best offer and see how this performs in comparison.
+
+
 
 
