@@ -1,12 +1,13 @@
+library(rstan)
 library(dplyr)
 library(tidyr)
-library(readr)
-library(stats4)
 library(lubridate)
+library(reshape2)
 library(ggplot2)
 library(ggrepel)
+library(bayesplot)
 
-source("R/dixon_coles/dixon_coles_helper.R")
+source("R/bayesian/bayesian_helper.R")
 source("R/utils.R")
 source("R/constants.R")
 
@@ -14,26 +15,22 @@ source("R/constants.R")
 data <- readRDS("data/germany.rds")
 
 # Parameter settings
-start_season <- 2006
-prediction_season <- 2020
-grid_search <- TRUE
-grid_search_from <- 0.001
-grid_search_to <- 0.01
-grid_search_by <- 0.001
-prediction_season_grid_search <- 2019
-time_decay <- 0.002
+start_season <- 2015
+prediction_season <- 2024
+grid_search <- FALSE
+prediction_season_grid_search <- prediction_season - 1
+grid_search_from <- 2010
+grid_search_to <- prediction_season_grid_search
 
-run_dixon_coles_model <- function(
+run_bayesian_model <- function(
     data,
     start_season, 
     prediction_season,
     grid_search,
     grid_search_from,
     grid_search_to,
-    grid_search_by,
-    prediction_season_grid_search,
-    time_decay
-    ) {
+    prediction_season_grid_search
+) {
 
   if (grid_search) {
     cat("Start grid seach for season ", prediction_season_grid_search, "\n")
@@ -41,36 +38,47 @@ run_dixon_coles_model <- function(
     rps_results <- data.frame(time_decay = numeric(), rps = numeric())
     
     # Grid search over specified range
-    for (td in seq(grid_search_from, grid_search_to, by = grid_search_by)) {
-      cat("Running for time_decay =", td, "\n")
-      result <- run_model_dc(data, start_season, prediction_season_grid_search, td)
+    for (season in seq(grid_search_from, grid_search_to, by = 1)) {
+      cat("Running for start season =", season, "\n")
+      result <- run_model_bay(data, start_season, prediction_season_grid_search)
       prediction <- result$prediction
       
       # Compute RPS for the current configuration
       rps <- compute_rps(prediction)
       rps <- rps$mean
-      cat("RPS for time_decay =", td, ":", rps, "\n")
+      cat("RPS for start season =", season, ":", rps, "\n")
       
       # Store the result
-      rps_results <- rbind(rps_results, data.frame(time_decay = td, rps = rps))
+      rps_results <- rbind(rps_results, data.frame(start_season = season, rps = rps))
     }
     
     # Find the best time_decay
-    time_decay <- rps_results[which.min(rps_results$rps), ]$time_decay
+    best_season <- rps_results[which.min(rps_results$rps), ]$start_season
     print("Finished grid search.")
-    cat("Best paramter is ", time_decay, "\n")
+    cat("Best paramter is ", best_season, "\n")
+    start_season <- best_season + 1
+    cat("Set new start season to ", start_season, "\n")
   }
   
-  result <- run_model_dc(data, start_season, prediction_season, time_decay)
+  # 3 years of training data performs best
+  
+  result <- run_model_bay(data, start_season, prediction_season)
   
   teams <- result$teams
   prediction <- result$prediction
   opt_params <- result$params
+  fit <- result$fit
   
   # Plots
-  params_plot <- plot_parameters_dc(teams, opt_params)
-  grid_search_plot <- plot_grid_search_dc(rps_results)
-  time_decay_plot <- plot_time_decay_dc(data, start_season, prediction_season, time_decay)
+  
+  params_plot <- plot_parameters(teams, opt_params)
+  if (grid_search) {grid_search_plot <- plot_grid_search(rps_results)}
+  hta_plot <- plot_home_team_advantage_per_team(opt_params, teams)
+  rho_plot <-plot_rho(opt_params)
+  ad_plot <- plot_attack_defense_strength(opt_params, teams)
+  mcmc_trace_plot <- mcmc_trace(fit, pars = c("rho"))
+  mcmc_acf_plot <- mcmc_acf(fit, pars = c("rho"))
+  mcmc_dens_overlay_plot <- mcmc_dens_overlay(fit, pars = c("rho"))
   
   # RPS
   rps <- compute_rps(prediction)
@@ -118,6 +126,10 @@ run_dixon_coles_model <- function(
     "scatter_comp_plot" = scatter_comp_plot,
     "params_plot" = params_plot,
     "grid_search_plot" = grid_search_plot,
-    "time_decay_plot" = time_decay_plot
+    "hta_plot" = hta_plot,
+    "ad_plot" = ad_plot,
+    "mcmc_trace_plot" = mcmc_trace_plot,
+    "mcmc_acf_plot" = mcmc_acf_plot,
+    "mcmc_dens_overlay_plot" = mcmc_dens_overlay_plot
   ))
 }

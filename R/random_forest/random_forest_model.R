@@ -1,12 +1,8 @@
 library(dplyr)
-library(tidyr)
-library(readr)
-library(stats4)
 library(lubridate)
-library(ggplot2)
-library(ggrepel)
+library(randomForest)
 
-source("R/dixon_coles/dixon_coles_helper.R")
+source("R/random_forest/random_forest_helper.R")
 source("R/utils.R")
 source("R/constants.R")
 
@@ -15,66 +11,59 @@ data <- readRDS("data/germany.rds")
 
 # Parameter settings
 start_season <- 2006
-prediction_season <- 2020
-grid_search <- TRUE
-grid_search_from <- 0.001
-grid_search_to <- 0.01
-grid_search_by <- 0.001
-prediction_season_grid_search <- 2019
-time_decay <- 0.002
+prediction_season <- 2024
+grid_search <- FALSE
+prediction_season_grid_search <- prediction_season - 1
+grid_search_from <- 2006
+grid_search_to <- prediction_season_grid_search
 
-run_dixon_coles_model <- function(
+run_random_forest_model <- function(
     data,
     start_season, 
     prediction_season,
     grid_search,
     grid_search_from,
     grid_search_to,
-    grid_search_by,
-    prediction_season_grid_search,
-    time_decay
-    ) {
+    prediction_season_grid_search
+) {
 
   if (grid_search) {
     cat("Start grid seach for season ", prediction_season_grid_search, "\n")
     # Placeholder to store RPS results
-    rps_results <- data.frame(time_decay = numeric(), rps = numeric())
+    rps_results <- data.frame(start_season = numeric(), rps = numeric())
     
     # Grid search over specified range
-    for (td in seq(grid_search_from, grid_search_to, by = grid_search_by)) {
-      cat("Running for time_decay =", td, "\n")
-      result <- run_model_dc(data, start_season, prediction_season_grid_search, td)
+    for (season in seq(grid_search_from, grid_search_to, by = 1)) {
+      cat("Running for start season =", season, "\n")
+      result <- run_model_rf(data, start_season, prediction_season_grid_search)
       prediction <- result$prediction
       
       # Compute RPS for the current configuration
       rps <- compute_rps(prediction)
       rps <- rps$mean
-      cat("RPS for time_decay =", td, ":", rps, "\n")
+      cat("RPS for start season =", season, ":", rps, "\n")
       
       # Store the result
-      rps_results <- rbind(rps_results, data.frame(time_decay = td, rps = rps))
+      rps_results <- rbind(rps_results, data.frame(start_season = season, rps = rps))
     }
     
     # Find the best time_decay
-    time_decay <- rps_results[which.min(rps_results$rps), ]$time_decay
+    best_season <- rps_results[which.min(rps_results$rps), ]$start_season
     print("Finished grid search.")
-    cat("Best paramter is ", time_decay, "\n")
+    cat("Best paramter is ", best_season, "\n")
+    start_season <- best_season + 1
+    cat("Set new start season to ", start_season, "\n")
   }
   
-  result <- run_model_dc(data, start_season, prediction_season, time_decay)
+  if (grid_search) {grid_search_plot <- plot_grid_search(rps_results)}
   
-  teams <- result$teams
+  result <- run_model_rf(data, start_season, prediction_season)
+  
   prediction <- result$prediction
-  opt_params <- result$params
-  
-  # Plots
-  params_plot <- plot_parameters_dc(teams, opt_params)
-  grid_search_plot <- plot_grid_search_dc(rps_results)
-  time_decay_plot <- plot_time_decay_dc(data, start_season, prediction_season, time_decay)
+  model <- result$model
   
   # RPS
   rps <- compute_rps(prediction)
-  accuracy <- compute_accuracy(prediction)
   
   # Compare league table
   data_first_half <- data %>%
@@ -110,14 +99,13 @@ run_dixon_coles_model <- function(
   return(list(
     "prediction" = prediction,
     "rps" = rps,
-    "accuracy" = accuracy,
     "league_table" = final_predicted_league_table,
     "mae_rank" = mae_rank,
     "mae_points" = mae_points,
     "bar_comp_plot" = bar_comp_plot,
-    "scatter_comp_plot" = scatter_comp_plot,
-    "params_plot" = params_plot,
-    "grid_search_plot" = grid_search_plot,
-    "time_decay_plot" = time_decay_plot
+    "scatter_comp_plot" = scatter_comp_plot
   ))
 }
+  
+  
+  

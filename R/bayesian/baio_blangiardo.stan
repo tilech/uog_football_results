@@ -41,9 +41,9 @@ model {
     defense ~ normal(mu_defense, 1/tau_defense); // Defense strength modeling
     home_advantage ~ normal(0, 1);  // Home advantage prior
 
-  // Likelihood
+  // Likelihood with time weights
     for (i in 1:n_games) {
-        home_goals[i] ~ poisson(exp(attack[home_team[i]] + defense[away_team[i]] + home_advantage));
-        away_goals[i] ~ poisson(exp(attack[away_team[i]] + defense[home_team[i]]));
+      home_goals[i] ~ poisson(exp(attack[home_team[i]] - defense[away_team[i]] + home_advantage));
+      away_goals[i] ~ poisson(exp(attack[away_team[i]] - defense[home_team[i]]));
     }
 }
