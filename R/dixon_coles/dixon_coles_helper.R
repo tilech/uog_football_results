@@ -14,11 +14,24 @@ run_model_dc <- function(data, season_start, season_prediction, time_decay) {
   
   # Create a named vector of initial parameters for all teams
   # Each team gets an attack and defense parameter
+  #initial_params <- c(
+  #  attack = setNames(rep(0, length(teams)), teams),
+  #  defense = setNames(rep(0, length(teams)), teams),
+  #  home_advantage = 0,  # Add home advantage parameter
+  #  rho = 0  # Dixon-Coles adjustment parameter
+  #)
+  
+  # Initialize attack parameters for n-1 teams (last one is computed)
+  num_teams <- length(teams)
+  initial_attack <- setNames(rep(0, num_teams - 1), teams[-num_teams])
+  initial_defense <- setNames(rep(0, num_teams), teams)
+  
+  # Combine parameters
   initial_params <- c(
-    attack = setNames(rep(0, length(teams)), teams),
-    defense = setNames(rep(0, length(teams)), teams),
-    home_advantage = 0,  # Add home advantage parameter
-    rho = 0  # Dixon-Coles adjustment parameter
+    attack = initial_attack,
+    defense = initial_defense,
+    home_advantage = 0,
+    rho = 0
   )
   
   # Define the Dixon-Coles likelihood function with team-specific parameters
@@ -27,7 +40,17 @@ run_model_dc <- function(data, season_start, season_prediction, time_decay) {
     data$Date <- as.Date(data$Date)
     
     # Extract attack and defense parameters for teams
-    attack <- params[paste0("attack.", teams)]
+    #attack <- params[paste0("attack.", teams)]
+    
+    # Extract attack and defense parameters
+    attack_free <- params[paste0("attack.", teams[-length(teams)])]
+    
+    # Compute the last attack parameter to enforce the sum constraint in log-space
+    attack_last <- log(num_teams - sum(exp(attack_free)))
+    
+    attack <- c(attack_free, attack_last)
+    names(attack) <- paste0("attack.", teams)
+    
     defense <- params[paste0("defense.", teams)]
     home_advantage <- params["home_advantage"]
     rho <- params["rho"]
@@ -75,6 +98,24 @@ run_model_dc <- function(data, season_start, season_prediction, time_decay) {
   
   # Extract optimized parameters
   opt_params <- opt$par
+  
+  # Extract optimized attack parameters (excluding the last one)
+  opt_attack_free <- opt$par[paste0("attack.", teams[-num_teams])]
+  
+  # Compute the last attack parameter to maintain the constraint
+  opt_attack_last <- log(num_teams - sum(exp(opt_attack_free)))
+  
+  # Combine attack parameters
+  opt_attack <- c(opt_attack_free, opt_attack_last)
+  names(opt_attack) <- paste0("attack.", teams)
+  
+  # Extract other parameters
+  opt_defense <- opt$par[paste0("defense.", teams)]
+  opt_home_advantage <- opt$par["home_advantage"]
+  opt_rho <- opt$par["rho"]
+  
+  # Combine everything into a single named vector
+  opt_params <- c(opt_attack, opt_defense, opt_home_advantage, opt_rho)
   
   # Function to calculate the Dixon-Coles probabilities for match outcomes
   calculate_probabilities <- function(lambda, mu, rho, max_goals = 10) {
@@ -180,8 +221,8 @@ plot_parameters_dc <- function(teams, opt_params) {
     geom_hline(yintercept = 0, linewidth = 1) +
     geom_vline(xintercept = 0, linewidth = 1) + 
     theme_minimal() +
-    ggtitle("Attack and Defense Strength of Teams") +
-    scale_color_manual(values = team_colors)  # Apply team colors to points only
+    scale_color_manual(values = team_colors) +
+    theme(legend.position="none")
   
   return(plot)
 
@@ -191,9 +232,9 @@ plot_grid_search_dc <- function(data) {
   plot <- ggplot(data=data, aes(x=time_decay, y=rps)) +
     geom_line()+
     geom_point() +
-    scale_x_continuous(breaks=seq(0.001, 0.01, 0.001)) +
+    scale_x_continuous(breaks=seq(0.0, 0.002, 0.0002)) +
     theme_minimal() +
-    labs(title="Grid Search for Time Decay Parameter",x="Time Decay", y = "RPS")
+    labs(x="Time Decay", y = "RPS")
   
   return(plot)
 }
@@ -212,5 +253,5 @@ plot_time_decay_dc <- function(data, season_start, season_prediction, time_decay
     geom_line() + 
     theme_minimal() +
     scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
-    labs(title="Time Decay", x="", y = "Effect on Opimization")
+    labs(x=NULL, y = "Time Decay Effect")
 }

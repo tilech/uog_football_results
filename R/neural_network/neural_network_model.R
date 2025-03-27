@@ -31,8 +31,6 @@ run_neural_network_model <- function(
     data,
     start_season, 
     prediction_season,
-    grid_search,
-    model_comparison,
     input_shape,
     grid_search_from,
     grid_search_to,
@@ -120,7 +118,7 @@ run_neural_network_model <- function(
   result <- run_model_nn(data, start_season, prediction_season, model)
   prediction <- result$prediction
   history <- result$history
-  training_plot <- plot(history, method = "ggplot2")
+  training_plot <- plot(history, method = "ggplot2", theme_bw = TRUE)
   
   
   if (grid_search) {
@@ -183,13 +181,15 @@ run_neural_network_model <- function(
   comparison_table <- comparison_table %>%
     select(team, points.predicted, rank.predicted, points.actual, rank.actual)
   
-  bar_comp_plot <- plot_bar_comparison_league_table(comparison_table)
+  bar_comp_plot <- plot_point_comparison_league_table(comparison_table)
+  scatter_point_comp_plot <- plot_scatter_comparison_points(comparison_table)
   scatter_comp_plot <- plot_scatter_comparison_league_table(comparison_table)
   mae_rank <- compute_mae_rank(comparison_table)
   mae_points <- compute_mae_points(comparison_table)
   
   return(list(
     "prediction" = prediction,
+    "comparison_table" = comparison_table,
     "rps" = rps,
     "history" = history,
     "accuracy" = accuracy,
@@ -197,6 +197,7 @@ run_neural_network_model <- function(
     "mae_rank" = mae_rank,
     "mae_points" = mae_points,
     "bar_comp_plot" = bar_comp_plot,
+    "scatter_point_comp_plot" = scatter_point_comp_plot,
     "scatter_comp_plot" = scatter_comp_plot,
     "nn_model_selection_plot" = nn_model_selection_plot,
     "training_plot" = training_plot

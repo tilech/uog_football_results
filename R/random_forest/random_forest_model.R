@@ -91,7 +91,7 @@ run_random_forest_model <- function(
   comparison_table <- comparison_table %>%
     select(team, points.predicted, rank.predicted, points.actual, rank.actual)
   
-  bar_comp_plot <- plot_bar_comparison_league_table(comparison_table)
+  bar_comp_plot <- plot_point_comparison_league_table(comparison_table)
   scatter_comp_plot <- plot_scatter_comparison_league_table(comparison_table)
   mae_rank <- compute_mae_rank(comparison_table)
   mae_points <- compute_mae_points(comparison_table)

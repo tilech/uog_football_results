@@ -39,7 +39,7 @@ model {
     tau_defense ~ gamma(0.1, 0.1);  // Prior for tau_defense
     attack ~ normal(mu_attack, 1/tau_attack);  // Attack strength modeling
     defense ~ normal(mu_defense, 1/tau_defense); // Defense strength modeling
-    home_advantage ~ normal(0, 1);  // Home advantage prior
+    home_advantage ~ normal(0, 100);  // Home advantage prior
 
   // Likelihood with time weights
     for (i in 1:n_games) {

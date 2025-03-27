@@ -69,11 +69,64 @@ run_model_bay <- function(data, start_season, prediction_season) {
     away_goals <- numeric(n_samples)
     
     for (j in 1:n_samples) {
-      home_goals[j] <- rpois(1, exp(post_attack[j, home_team] - 
-                                      post_defense[j, away_team] + 
-                                      post_home_advantage[j, home_team]))
-      away_goals[j] <- rpois(1, exp(post_attack[j, away_team] - 
-                                      post_defense[j, home_team]))
+      #home_goals[j] <- rpois(1, exp(post_attack[j, home_team] - 
+      #                                post_defense[j, away_team] + 
+      #                                post_home_advantage[j, home_team]))
+      #away_goals[j] <- rpois(1, exp(post_attack[j, away_team] - 
+      #                                post_defense[j, home_team]))
+      lambda <- exp(post_attack[j, home_team] - post_defense[j, away_team] + post_home_advantage[j, home_team])
+      mu <- exp(post_attack[j, away_team] - post_defense[j, home_team])
+      rho_adj <- post_rho[j]  
+      
+      # Compute Poisson probabilities
+      p_00 <- dpois(0, lambda) * dpois(0, mu)
+      p_10 <- dpois(1, lambda) * dpois(0, mu)
+      p_01 <- dpois(0, lambda) * dpois(1, mu)
+      p_11 <- dpois(1, lambda) * dpois(1, mu)
+      
+      # Apply Dixon-Coles adjustments
+      p_00 <- p_00 * (1 - lambda * mu * rho_adj)
+      p_10 <- p_10 * (1 + mu * rho_adj)
+      p_01 <- p_01 * (1 + lambda * rho_adj)
+      p_11 <- p_11 * (1 - rho_adj)
+      
+      # Ensure probabilities are non-negative
+      p_00 <- max(p_00, 0)
+      p_10 <- max(p_10, 0)
+      p_01 <- max(p_01, 0)
+      p_11 <- max(p_11, 0)
+      
+      # Compute probability of falling into the low-score category
+      p_low_score <- p_00 + p_10 + p_01 + p_11
+      
+      # Normalize low-score probabilities
+      p_00 <- p_00 / p_low_score
+      p_10 <- p_10 / p_low_score
+      p_01 <- p_01 / p_low_score
+      p_11 <- p_11 / p_low_score
+      
+      # Decide if we should sample from low-score outcomes
+      u <- runif(1)
+      if (u < p_low_score) {
+        v <- runif(1)
+        if (v < p_00) {
+          home_goals[j] <- 0
+          away_goals[j] <- 0
+        } else if (v < p_00 + p_10) {
+          home_goals[j] <- 1
+          away_goals[j] <- 0
+        } else if (v < p_00 + p_10 + p_01) {
+          home_goals[j] <- 0
+          away_goals[j] <- 1
+        } else {
+          home_goals[j] <- 1
+          away_goals[j] <- 1
+        }
+      } else {
+        # If outside low-score adjustment, sample from regular Poisson distributions
+        home_goals[j] <- rpois(1, lambda)
+        away_goals[j] <- rpois(1, mu)
+      }
     }
     
     # Calculate probabilities

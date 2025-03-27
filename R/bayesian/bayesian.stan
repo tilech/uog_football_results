@@ -40,8 +40,8 @@ model {
   tau_defense ~ gamma(0.1, 0.1);  // Prior for tau_defense
   attack ~ normal(mu_attack, 1/tau_attack);  // Attack strength modeling
   defense ~ normal(mu_defense, 1/tau_defense); // Defense strength modeling
-  home_advantage ~ normal(0, 1);  // Home advantage prior
-  rho ~ normal(0, 0.1); // Prior for Dixon-Coles adjustment, typically small
+  home_advantage ~ normal(0, 100);  // Home advantage prior
+  rho ~ normal(0, 100); // Prior for Dixon-Coles adjustment, typically small
 
   for (i in 1:n_games) {
     real lambda = exp(attack[home_team[i]] - defense[away_team[i]] + home_advantage[home_team[i]]);

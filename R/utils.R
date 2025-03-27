@@ -24,9 +24,9 @@ compute_rps <- function(data) {
       cum_obs_2 = actual_home_win + actual_draw,
       cum_obs_3 = 1,
       
-      rps = (cum_prob_1 - cum_obs_1)^2 +
+      rps = ((cum_prob_1 - cum_obs_1)^2 +
         (cum_prob_2 - cum_obs_2)^2 +
-        (cum_prob_3 - cum_obs_3)^2
+        (cum_prob_3 - cum_obs_3)^2)/2
     )
   
   return(list("mean" = mean(data$rps), "list" = data$rps))
@@ -163,7 +163,7 @@ plot_grid_search <- function(data) {
     geom_point() +
     scale_x_continuous(breaks=seq(min(data$start_season), max(data$start_season), 1)) +
     theme_minimal() +
-    labs(title="Grid Search for determining the best start season", x="Start Season for Training", y = "RPS")
+    labs(x=NULL, y = "RPS")
   
   return(plot)
 }
@@ -183,12 +183,12 @@ plot_parameters <- function(teams, opt_params) {
   # Create the plot
   plot <- ggplot(data_dc_plot, aes(x = Defense, y = Attack, label = Team)) + 
     geom_point(aes(color = Team), size = 3) +  # Color the points
-    geom_text_repel(vjust = -0.5, hjust = 0.5, max.overlaps = 10) +  # Keep text in default color
+    geom_text_repel(vjust = 1.5, hjust = 0.5, size = 3, max.overlaps = 10) +  # Keep text in default color
     geom_hline(yintercept = 0, linewidth = 1) +
     geom_vline(xintercept = 0, linewidth = 1) + 
     theme_minimal() +
-    ggtitle("Attack and Defense Strength of Teams") +
-    scale_color_manual(values = team_colors)  # Apply team colors to points only
+    scale_color_manual(values = team_colors) +
+    theme(legend.position="none")
   
   return(plot)
 }
@@ -200,12 +200,47 @@ plot_bar_comparison_league_table <- function(comparison_table) {
     geom_bar(aes(y = points.actual, color = team), stat = "identity", position = position_dodge(width = 0.9), fill = NA, size = 1) +
     scale_fill_manual(values = team_colors) +
     scale_color_manual(values = team_colors, guide = "none") +
-    labs(title = "Comparison of Predicted (filled) vs Actual (framed) Points by Team",
-         x = "Team",
+    labs(x = "Team",
          y = "Points",
          fill = "Team") +
     theme_minimal() +
     coord_flip()
+  
+  return(plot)
+}
+
+plot_point_comparison_league_table <- function(comparison_table) {
+  # Visualization: Points and Line for Comparing Points
+  plot <- ggplot(comparison_table, aes(x = reorder(team, points.actual))) +
+    geom_point(aes(y = points.actual, shape = "Actual", color = team), size = 3) +
+    geom_point(aes(y = points.predicted, shape = "Predicted", color = team), size = 3) +
+    geom_segment(aes(y = points.actual, yend = points.predicted, xend = reorder(team, points.actual), color = team), size = 1) +
+    scale_color_manual(values = team_colors, guide = "none") +
+    scale_shape_manual(values = c("Actual" = 16, "Predicted" = 17)) +
+    labs(x = "Team",
+         y = "Points",
+         shape = NULL) +
+    theme_minimal(base_size = 18) +
+    coord_flip() +
+    theme(legend.position = c(0.85, 0.15),
+          legend.background = element_rect(fill = "white", color = "black"),
+          legend.text = element_text(size = 18))
+  
+  return(plot)
+}
+
+plot_scatter_comparison_points <- function(comparison_table) {
+  # Visualization: Bar Plot for Comparing Points
+  plot <- ggplot(comparison_table, aes(x = points.actual, y = points.predicted, label = team)) +
+    geom_point(aes(color = team), size = 3) +
+    geom_text_repel(vjust = 1.5, hjust = 0.5, size = 3, max.overlaps = 10) +  # Keep text in default color
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+    scale_color_manual(values = team_colors) +  # Use team colors for points
+    labs(x = "Actual Points", 
+         y = "Predicted Points",
+         color = "Team") +  # Keep only the color legend
+    theme_minimal(base_size = 18) +
+    theme(legend.position="none")
   
   return(plot)
 }
@@ -214,14 +249,14 @@ plot_scatter_comparison_league_table <- function(comparison_table) {
   # Scatter Plot for Rank Differences
   ggplot(comparison_table, aes(x = rank.actual, y = rank.predicted, label = team)) +
     geom_point(aes(color = team), size = 3) +
-    geom_text(vjust = 1.5, hjust = 0.5, size = 3, check_overlap = TRUE) +
+    geom_text_repel(vjust = 1.5, hjust = 0.5, size = 3, max.overlaps = 10) +  # Keep text in default color
     geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
     scale_color_manual(values = team_colors) +  # Use team colors for points
-    labs(title = "Rank Comparison: Predicted vs Actual", 
-         x = "Actual Rank", 
+    labs(x = "Actual Rank", 
          y = "Predicted Rank",
          color = "Team") +  # Keep only the color legend
-    theme_minimal()
+    theme_minimal(base_size = 18) +
+    theme(legend.position="none")
 }
 
 compute_mae_rank <- function(comparison_table) {
@@ -239,7 +274,7 @@ plot_home_team_advantage <- function(opt_params) {
   
   plot <- ggplot(home_advantage_df, aes(x = opt_params$home_advantage)) +
     geom_density(fill = "steelblue", alpha = 0.7) +
-    labs(title = "Posterior Distribution of Home Advantage", x = "Home Advantage", y = "Density") +
+    labs(x = "Home Advantage", y = "Density") +
     theme_minimal()
   return(plot)
 }
@@ -260,7 +295,7 @@ plot_home_team_advantage_per_team <- function(opt_params, teams) {
   # Plotting attack strengths as a boxplot
   plot_hta <- ggplot(hta_long, aes(x = Team, y = HomeTeamAdvantage)) +
     geom_boxplot(fill = "green", alpha = 0.7) +
-    labs(title = "Boxplot of Home Team Advantage by Team", x = "Team", y = "Home Team Advantage") +
+    labs(x = "Team", y = "Home Team Advantage") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
   
@@ -273,7 +308,7 @@ plot_rho <- function(opt_params) {
   
   plot <- ggplot(rho_df, aes(x = opt_params$rho)) +
     geom_density(fill = "steelblue", alpha = 0.7) +
-    labs(title = "Posterior Distribution of DC-adjustment Parameter", x = "Rho", y = "Density") +
+    labs(x = "Rho", y = "Density") +
     theme_minimal()
   return(plot)
 }
@@ -298,14 +333,14 @@ plot_attack_defense_strength <- function(opt_params, teams) {
   # Plotting attack strengths as a boxplot
   plot_attack <- ggplot(attack_long, aes(x = Team, y = AttackStrength)) +
     geom_boxplot(fill = "red", alpha = 0.7) +
-    labs(title = "Boxplot of Attack Strengths by Team", x = "Team", y = "Attack Strength") +
+    labs(x = "Team", y = "Attack Strength") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
   
   # Plotting defense strengths as a boxplot
   plot_defense <- ggplot(defense_long, aes(x = Team, y = DefenseStrength)) +
     geom_boxplot(fill = "blue", alpha = 0.7) +
-    labs(title = "Boxplot of Defense Strengths by Team", x = "Team", y = "Defense Strength") +
+    labs(x = "Team", y = "Defense Strength") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
   

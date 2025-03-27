@@ -15,7 +15,7 @@ source("R/constants.R")
 data <- readRDS("data/germany.rds")
 
 # Parameter settings
-start_season <- 2015
+start_season <- 2023
 prediction_season <- 2024
 grid_search <- FALSE
 prediction_season_grid_search <- prediction_season - 1
@@ -69,6 +69,8 @@ run_bayesian_model <- function(
   opt_params <- result$params
   fit <- result$fit
   
+  rhat_values <- rhat(fit)
+  
   # Plots
   
   params_plot <- plot_parameters(teams, opt_params)
@@ -76,6 +78,7 @@ run_bayesian_model <- function(
   hta_plot <- plot_home_team_advantage_per_team(opt_params, teams)
   rho_plot <-plot_rho(opt_params)
   ad_plot <- plot_attack_defense_strength(opt_params, teams)
+  bayesplot_theme_set(ggplot2::theme_minimal())
   mcmc_trace_plot <- mcmc_trace(fit, pars = c("rho"))
   mcmc_acf_plot <- mcmc_acf(fit, pars = c("rho"))
   mcmc_dens_overlay_plot <- mcmc_dens_overlay(fit, pars = c("rho"))
@@ -110,26 +113,39 @@ run_bayesian_model <- function(
   comparison_table <- comparison_table %>%
     select(team, points.predicted, rank.predicted, points.actual, rank.actual)
   
-  bar_comp_plot <- plot_bar_comparison_league_table(comparison_table)
+  bar_comp_plot <- plot_point_comparison_league_table(comparison_table)
+  scatter_point_comp_plot <- plot_scatter_comparison_points(comparison_table)
   scatter_comp_plot <- plot_scatter_comparison_league_table(comparison_table)
   mae_rank <- compute_mae_rank(comparison_table)
   mae_points <- compute_mae_points(comparison_table)
   
-  return(list(
+  result_list <- list(
     "prediction" = prediction,
+    "teams" = teams,
+    "opt_params" = opt_params,
+    "comparison_table" = comparison_table,
+    "rhat_values" = rhat_values,
     "rps" = rps,
     "accuracy" = accuracy,
     "league_table" = final_predicted_league_table,
     "mae_rank" = mae_rank,
     "mae_points" = mae_points,
     "bar_comp_plot" = bar_comp_plot,
+    "scatter_point_comp_plot" = scatter_point_comp_plot,
     "scatter_comp_plot" = scatter_comp_plot,
     "params_plot" = params_plot,
-    "grid_search_plot" = grid_search_plot,
     "hta_plot" = hta_plot,
     "ad_plot" = ad_plot,
     "mcmc_trace_plot" = mcmc_trace_plot,
     "mcmc_acf_plot" = mcmc_acf_plot,
     "mcmc_dens_overlay_plot" = mcmc_dens_overlay_plot
-  ))
+  )
+  
+  # Conditionally add grid_search_plot if it exists
+  if (exists("grid_search_plot")) {
+    result_list$"grid_search_plot" <- grid_search_plot
+  }
+  
+  # Return the result list
+  return(result_list)
 }

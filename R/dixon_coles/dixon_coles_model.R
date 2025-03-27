@@ -5,6 +5,7 @@ library(stats4)
 library(lubridate)
 library(ggplot2)
 library(ggrepel)
+library(alabama)
 
 source("R/dixon_coles/dixon_coles_helper.R")
 source("R/utils.R")
@@ -102,19 +103,24 @@ run_dixon_coles_model <- function(
   comparison_table <- comparison_table %>%
     select(team, points.predicted, rank.predicted, points.actual, rank.actual)
   
-  bar_comp_plot <- plot_bar_comparison_league_table(comparison_table)
+  bar_comp_plot <- plot_point_comparison_league_table(comparison_table)
+  scatter_point_comp_plot <- plot_scatter_comparison_points(comparison_table)
   scatter_comp_plot <- plot_scatter_comparison_league_table(comparison_table)
   mae_rank <- compute_mae_rank(comparison_table)
   mae_points <- compute_mae_points(comparison_table)
   
   return(list(
     "prediction" = prediction,
+    "teams" = teams,
+    "opt_params" = opt_params,
+    "comparison_table" = comparison_table,
     "rps" = rps,
     "accuracy" = accuracy,
     "league_table" = final_predicted_league_table,
     "mae_rank" = mae_rank,
     "mae_points" = mae_points,
     "bar_comp_plot" = bar_comp_plot,
+    "scatter_point_comp_plot" = scatter_point_comp_plot,
     "scatter_comp_plot" = scatter_comp_plot,
     "params_plot" = params_plot,
     "grid_search_plot" = grid_search_plot,

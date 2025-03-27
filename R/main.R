@@ -19,9 +19,9 @@ prediction_season_grid_search <- 2023
 grid_search <- TRUE
 
 # Dixon Coles parameter settings 
-grid_search_from_dc <- 0.001
-grid_search_to_dc <- 0.01
-grid_search_by_dc <- 0.001
+grid_search_from_dc <- 0.0
+grid_search_to_dc <- 0.002
+grid_search_by_dc <- 0.0002
 time_decay <- 0.002
 
 # Bayesian parameter settings 
@@ -82,18 +82,23 @@ neural_network_model <- run_neural_network_model(
   grid_search_to_bay
 )
 
+# Save Environment
+save.image(file='output/results.RData')
+
 # Save Plots
 plot_names <- list(
   "dixon_coles_model" = list(
     "bar_comp_plot", 
-    "scatter_comp_plot", 
+    "scatter_comp_plot",
+    "scatter_point_comp_plot",
     "params_plot",
     "grid_search_plot",
     "time_decay_plot"
   ),
   "baio_blangiardo_model" = list(
     "bar_comp_plot", 
-    "scatter_comp_plot", 
+    "scatter_comp_plot",
+    "scatter_point_comp_plot",
     "params_plot",
     "grid_search_plot",
     "hta_plot",
@@ -104,7 +109,8 @@ plot_names <- list(
   ),
   "bayesian_model" = list(
     "bar_comp_plot", 
-    "scatter_comp_plot", 
+    "scatter_comp_plot",
+    "scatter_point_comp_plot",
     "params_plot",
     "grid_search_plot",
     "hta_plot",
@@ -114,11 +120,19 @@ plot_names <- list(
     "mcmc_dens_overlay_plot"
   ),
   "neural_network_model" = list(
-    "bar_comp_plot", 
+    "bar_comp_plot",
+    "scatter_point_comp_plot",
     "scatter_comp_plot",
     "nn_model_selection_plot",
     "training_plot"
   )
+)
+
+square_plots <- list(
+  "params_plot",
+  "bar_comp_plot",
+  "scatter_point_comp_plot",
+  "scatter_comp_plot"
 )
 
 # Loop over each model and plot
@@ -132,13 +146,17 @@ for (model_name in names(plot_names)) {
     if (!"attack" %in% names(plots_to_save)) {
       # Single plot
       filename <- paste0("output/", model_name, "/", plot_name, ".png")
-      ggsave(filename, plot = model_object[[plot_name]], device = "png", bg = "white")
+      if (plot_name %in% square_plots) {
+        ggsave(filename, plot = model_object[[plot_name]], device = "png", bg = "white", width = 7, height = 7, dpi = 300, units = "in")
+      } else {
+        ggsave(filename, plot = model_object[[plot_name]], device = "png", bg = "white", width = 12.3, height = 7, dpi = 300, units = "in")
+      }
     } else {
       # List of plots
       for (sub_plot_name in names(plots_to_save)) {
         sub_plot <- plots_to_save[[sub_plot_name]]
         filename <- paste0("output/", model_name, "/", plot_name, "_", sub_plot_name, ".png")
-        ggsave(filename, plot = sub_plot, device = "png", bg = "white")
+        ggsave(filename, plot = sub_plot, device = "png", bg = "white", width = 12.3, height = 7, dpi = 300, units = "in")
       }
     }
   }

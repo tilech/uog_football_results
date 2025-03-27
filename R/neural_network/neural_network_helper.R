@@ -202,7 +202,8 @@ plot_nn_model_selection <- function(data) {
   plot <- ggplot(data=data, aes(x=model, y=rps)) +
     geom_col()+
     theme_minimal() +
-    labs(title="Model performance for different architectures", x="Model", y = "RPS")
+    labs(x="Model", y = "RPS") +
+    coord_cartesian(ylim = c(0.35, max(data$rps)))
   
   return(plot)
 }
