@@ -10,7 +10,7 @@ data {
 parameters {
   vector[n_teams-1] attack_free;    // Attack strength for each team
   vector[n_teams-1] defense_free;   // Defense strength for each team
-  vector[n_teams] home_advantage;   // Home advantage for each team
+  vector[n_teams-1] home_advantage_free;   // Home advantage for each team
   real mu_attack;
   real mu_defense;
   real<lower=0> tau_attack;
@@ -21,14 +21,17 @@ parameters {
 transformed parameters {
   vector[n_teams] attack;
   vector[n_teams] defense;
+  vector[n_teams] home_advantage;
 
   // need to make sum(att)=sum(def)=0
   for (k in 1:(n_teams-1)) {
     attack[k] = attack_free[k];
     defense[k] = defense_free[k];
+    home_advantage[k] = home_advantage_free[k];
   }
   attack[n_teams] = -sum(attack_free);
   defense[n_teams] = -sum(defense_free);
+  home_advantage[n_teams] = -sum(home_advantage_free);
 
 }
 
