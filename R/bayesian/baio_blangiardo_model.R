@@ -13,14 +13,6 @@ source("R/constants.R")
 # Load data
 data <- readRDS("data/germany.rds")
 
-# Parameter settings
-start_season <- 2006
-prediction_season <- 2024
-grid_search <- TRUE
-prediction_season_grid_search <- prediction_season - 1
-grid_search_from <- 2006
-grid_search_to <- prediction_season_grid_search
-
 run_baio_blangiardo_model <- function(
     data,
     start_season, 

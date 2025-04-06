@@ -14,14 +14,6 @@ source("R/constants.R")
 # Load data
 data <- readRDS("data/germany.rds")
 
-# Parameter settings
-start_season <- 2023
-prediction_season <- 2024
-grid_search <- FALSE
-prediction_season_grid_search <- prediction_season - 1
-grid_search_from <- 2010
-grid_search_to <- prediction_season_grid_search
-
 run_bayesian_model <- function(
     data,
     start_season, 
@@ -35,7 +27,8 @@ run_bayesian_model <- function(
   if (grid_search) {
     cat("Start grid seach for season ", prediction_season_grid_search, "\n")
     # Placeholder to store RPS results
-    rps_results <- data.frame(time_decay = numeric(), rps = numeric())
+    rps_results <- data.frame(start_season = numeric(), rps = numeric())
+    accuracy_results <- data.frame(start_season = numeric(), accuracy = numeric())
     
     # Grid search over specified range
     for (season in seq(grid_search_from, grid_search_to, by = 1)) {
@@ -46,10 +39,12 @@ run_bayesian_model <- function(
       # Compute RPS for the current configuration
       rps <- compute_rps(prediction)
       rps <- rps$mean
+      accuracy <- compute_accuracy(prediction)
       cat("RPS for start season =", season, ":", rps, "\n")
       
       # Store the result
       rps_results <- rbind(rps_results, data.frame(start_season = season, rps = rps))
+      accuracy_results <- rbind(accuracy_results, data.frame(start_season = season, accuracy = accuracy))
     }
     
     # Find the best time_decay
@@ -135,6 +130,7 @@ run_bayesian_model <- function(
     "scatter_comp_plot" = scatter_comp_plot,
     "params_plot" = params_plot,
     "hta_plot" = hta_plot,
+    "rho_plot" = rho_plot,
     "ad_plot" = ad_plot,
     "mcmc_trace_plot" = mcmc_trace_plot,
     "mcmc_acf_plot" = mcmc_acf_plot,
@@ -144,6 +140,7 @@ run_bayesian_model <- function(
   # Conditionally add grid_search_plot if it exists
   if (exists("grid_search_plot")) {
     result_list$"grid_search_plot" <- grid_search_plot
+    result_list$"accuracy_results" <- accuracy_results
   }
   
   # Return the result list

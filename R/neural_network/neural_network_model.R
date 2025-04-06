@@ -34,7 +34,8 @@ run_neural_network_model <- function(
     input_shape,
     grid_search_from,
     grid_search_to,
-    prediction_season_grid_search
+    prediction_season_grid_search,
+    grid_search = FALSE
 ) {
 
   # Define the model
