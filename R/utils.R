@@ -168,6 +168,17 @@ plot_grid_search <- function(data) {
   return(plot)
 }
 
+plot_grid_search_rho <- function(data) {
+  plot <- ggplot(data=data, aes(x=start_season, y=accuracy)) +
+    geom_line()+
+    geom_point() +
+    scale_x_continuous(breaks=seq(min(data$start_season), max(data$start_season), 1)) +
+    theme_minimal() +
+    labs(x=NULL, y = "Accuracy")
+  
+  return(plot)
+}
+
 # Update league table based on home/away match results without goals scored
 plot_parameters <- function(teams, opt_params) {
   attack_strength <- apply(opt_params$attack, 2, mean)

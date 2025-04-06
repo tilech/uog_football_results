@@ -7,7 +7,7 @@ source("R/bayesian/bayesian_model.R")
 source("R/neural_network/neural_network_model.R")
 
 # Set the seed
-set.seed(42)
+set.seed(42, kind = "Mersenne-Twister", normal.kind = "Inversion",sample.kind="Rejection")
 
 # Load data
 data <- readRDS("data/germany.rds")
@@ -58,6 +58,16 @@ baio_blangiardo_model <- run_baio_blangiardo_model(
     prediction_season_grid_search
 )
 
+baio_blangiardo_model_final <- run_baio_blangiardo_model(
+  data,
+  2006, 
+  prediction_season,
+  FALSE,
+  grid_search_from_bay,
+  grid_search_to_bay,
+  prediction_season_grid_search
+)
+
 # Run Bayesian model
 bayesian_model <- run_bayesian_model(
   data,
@@ -69,17 +79,25 @@ bayesian_model <- run_bayesian_model(
   prediction_season_grid_search
 )
 
+bayesian_model_final <- run_bayesian_model(
+  data,
+  2006, 
+  prediction_season,
+  FALSE,
+  grid_search_from_bay,
+  grid_search_to_bay,
+  prediction_season_grid_search
+)
+
 # Run Neural Network model
 neural_network_model <- run_neural_network_model(
   data,
-  start_season,
+  start_season, 
   prediction_season,
-  grid_search_nn,
-  model_comparison,
   input_shape,
-  prediction_season_grid_search,
-  grid_search_from_bay,
-  grid_search_to_bay
+  grid_search_from,
+  grid_search_to,
+  prediction_season_grid_search
 )
 
 # Save Environment
@@ -96,11 +114,13 @@ plot_names <- list(
     "time_decay_plot"
   ),
   "baio_blangiardo_model" = list(
+    "grid_search_plot"
+  ),
+  "baio_blangiardo_model_final" = list(
     "bar_comp_plot", 
     "scatter_comp_plot",
     "scatter_point_comp_plot",
     "params_plot",
-    "grid_search_plot",
     "hta_plot",
     "ad_plot",
     "mcmc_trace_plot",
@@ -108,11 +128,13 @@ plot_names <- list(
     "mcmc_dens_overlay_plot"
   ),
   "bayesian_model" = list(
+    "grid_search_plot"
+  ),
+  "bayesian_model_final" = list(
     "bar_comp_plot", 
     "scatter_comp_plot",
     "scatter_point_comp_plot",
     "params_plot",
-    "grid_search_plot",
     "hta_plot",
     "ad_plot",
     "mcmc_trace_plot",
@@ -161,6 +183,8 @@ for (model_name in names(plot_names)) {
     }
   }
 }
+
+rho_plot <- plot_rho(bayesian_model_final$opt_params)
 
 
 
