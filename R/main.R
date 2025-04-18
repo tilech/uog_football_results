@@ -60,7 +60,7 @@ baio_blangiardo_model <- run_baio_blangiardo_model(
 
 baio_blangiardo_model_final <- run_baio_blangiardo_model(
   data,
-  2006, 
+  2012, 
   prediction_season,
   FALSE,
   grid_search_from_bay,
@@ -81,7 +81,7 @@ bayesian_model <- run_bayesian_model(
 
 bayesian_model_final <- run_bayesian_model(
   data,
-  2006, 
+  2013, 
   prediction_season,
   FALSE,
   grid_search_from_bay,
@@ -114,13 +114,11 @@ plot_names <- list(
     "time_decay_plot"
   ),
   "baio_blangiardo_model" = list(
-    "grid_search_plot"
-  ),
-  "baio_blangiardo_model_final" = list(
     "bar_comp_plot", 
     "scatter_comp_plot",
     "scatter_point_comp_plot",
     "params_plot",
+    "grid_search_plot",
     "hta_plot",
     "ad_plot",
     "mcmc_trace_plot",
@@ -128,13 +126,11 @@ plot_names <- list(
     "mcmc_dens_overlay_plot"
   ),
   "bayesian_model" = list(
-    "grid_search_plot"
-  ),
-  "bayesian_model_final" = list(
     "bar_comp_plot", 
     "scatter_comp_plot",
     "scatter_point_comp_plot",
     "params_plot",
+    "grid_search_plot",
     "hta_plot",
     "ad_plot",
     "mcmc_trace_plot",
@@ -167,24 +163,24 @@ for (model_name in names(plot_names)) {
     
     if (!"attack" %in% names(plots_to_save)) {
       # Single plot
-      filename <- paste0("output/", model_name, "/", plot_name, ".png")
+      filename <- paste0("output/", model_name, "/", plot_name, ".pdf")
       if (plot_name %in% square_plots) {
-        ggsave(filename, plot = model_object[[plot_name]], device = "png", bg = "white", width = 7, height = 7, dpi = 300, units = "in")
+        ggsave(filename, plot = model_object[[plot_name]], device = "pdf", bg = "white", width = 7, height = 7, dpi = 300, units = "in")
       } else {
-        ggsave(filename, plot = model_object[[plot_name]], device = "png", bg = "white", width = 12.3, height = 7, dpi = 300, units = "in")
+        ggsave(filename, plot = model_object[[plot_name]], device = "pdf", bg = "white", width = 12.3, height = 7, dpi = 300, units = "in")
       }
     } else {
       # List of plots
       for (sub_plot_name in names(plots_to_save)) {
         sub_plot <- plots_to_save[[sub_plot_name]]
-        filename <- paste0("output/", model_name, "/", plot_name, "_", sub_plot_name, ".png")
-        ggsave(filename, plot = sub_plot, device = "png", bg = "white", width = 12.3, height = 7, dpi = 300, units = "in")
+        filename <- paste0("output/", model_name, "/", plot_name, "_", sub_plot_name, ".pdf")
+        ggsave(filename, plot = sub_plot, device = "pdf", bg = "white", width = 12.3, height = 7, dpi = 300, units = "in")
       }
     }
   }
 }
 
-rho_plot <- plot_rho(bayesian_model_final$opt_params)
+rho_plot <- plot_rho(bayesian_model$opt_params)
 
 
 
