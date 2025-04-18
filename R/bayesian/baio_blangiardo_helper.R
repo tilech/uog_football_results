@@ -1,5 +1,6 @@
 # Functions to run the Baio-Blangirado model for a specific season
 run_model_bb <- function(data, start_season, prediction_season) {
+  set.seed(42, kind = "Mersenne-Twister", normal.kind = "Inversion",sample.kind="Rejection")
   # Prepare Data for Stan
   data_train <- data %>%
     filter(Season >= start_season &

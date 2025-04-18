@@ -33,7 +33,7 @@ run_bayesian_model <- function(
     # Grid search over specified range
     for (season in seq(grid_search_from, grid_search_to, by = 1)) {
       cat("Running for start season =", season, "\n")
-      result <- run_model_bay(data, start_season, prediction_season_grid_search)
+      result <- run_model_bay(data, season, prediction_season_grid_search)
       prediction <- result$prediction
       
       # Compute RPS for the current configuration

@@ -114,3 +114,60 @@ ggplot(data_join_goals, aes(x = total_games, y = deviation, label = Team)) +
   scale_color_manual(values = team_colors) +
   theme(legend.position="none")
 
+number_of_draws <- data.frame(Model = c("DC", "BB", "EB", "NN", "Actual"),
+                              Draws = c(sum(dixon_coles_model$prediction$predicted_draw),
+                                        sum(baio_blangiardo_model_final$prediction$predicted_draw),
+                                        sum(bayesian_model_final$prediction$predicted_draw),
+                                        sum(neural_network_model$prediction$predicted_draw),
+                                        sum(bayesian_model$prediction$actual_draw)))
+
+# Function to compute TPR for a given outcome
+compute_tpr <- function(actual, dc, bb, eb, nn, tpr_name) {
+  df <- data.frame(Actual = actual,
+                   DC = dc,
+                   BB = bb,
+                   EB = eb,
+                   NN = nn)
+  
+  total <- nrow(df %>% filter(Actual == 1))
+  
+  df %>%
+    filter(Actual == 1) %>%
+    mutate(across(DC:NN, ~ Actual == .x)) %>%
+    pivot_longer(!Actual, names_to = "model", values_to = "correct") %>%
+    group_by(model) %>%
+    summarise(!!tpr_name := sum(correct) / total, .groups = "drop")
+}
+
+# Apply function for each outcome
+tpr_home_win <- compute_tpr(
+  actual = dixon_coles_model$prediction$actual_home_win,
+  dc = dixon_coles_model$prediction$predicted_home_win,
+  bb = baio_blangiardo_model_final$prediction$predicted_home_win,
+  eb = bayesian_model$prediction$predicted_home_win,
+  nn = neural_network_model$prediction$predicted_home_win,
+  tpr_name = "tpr_home_win"
+)
+
+tpr_draw <- compute_tpr(
+  actual = dixon_coles_model$prediction$actual_draw,
+  dc = dixon_coles_model$prediction$predicted_draw,
+  bb = baio_blangiardo_model_final$prediction$predicted_draw,
+  eb = bayesian_model$prediction$predicted_draw,
+  nn = neural_network_model$prediction$predicted_draw,
+  tpr_name = "tpr_draw"
+)
+
+tpr_away_win <- compute_tpr(
+  actual = dixon_coles_model$prediction$actual_away_win,
+  dc = dixon_coles_model$prediction$predicted_away_win,
+  bb = baio_blangiardo_model_final$prediction$predicted_away_win,
+  eb = bayesian_model$prediction$predicted_away_win,
+  nn = neural_network_model$prediction$predicted_away_win,
+  tpr_name = "tpr_away_win"
+)
+
+tpr_results <- reduce(list(tpr_home_win, tpr_draw, tpr_away_win), full_join, by = "model")
+
+
+
