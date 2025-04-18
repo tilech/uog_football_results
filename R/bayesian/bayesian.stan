@@ -5,6 +5,9 @@ data {
   int<lower=1> away_team[n_games]; // Away team ID
   int<lower=0> home_goals[n_games];// Home team goals
   int<lower=0> away_goals[n_games];// Away team goals
+  vector[n_teams] team_weights_home;
+  vector[n_teams] team_weights_attack;
+  vector[n_teams] team_weights_defense;
 }
 
 parameters {
@@ -23,16 +26,26 @@ transformed parameters {
   vector[n_teams] defense;
   vector[n_teams] home_advantage;
 
-  // need to make sum(att)=sum(def)=0
-  for (k in 1:(n_teams-1)) {
+  // Assign the free parameters
+  for (k in 1:(n_teams - 1)) {
     attack[k] = attack_free[k];
     defense[k] = defense_free[k];
     home_advantage[k] = home_advantage_free[k];
   }
-  attack[n_teams] = -sum(attack_free);
-  defense[n_teams] = -sum(defense_free);
-  home_advantage[n_teams] = -sum(home_advantage_free);
 
+  // Weighted sum-to-zero constraints
+
+  // Attack: last element balances weighted sum to zero
+  real weighted_sum_attack = dot_product(team_weights_attack[1:(n_teams - 1)], attack_free);
+  attack[n_teams] = -weighted_sum_attack / team_weights_attack[n_teams];
+
+  // Defense: last element balances weighted sum to zero
+  real weighted_sum_defense = dot_product(team_weights_defense[1:(n_teams - 1)], defense_free);
+  defense[n_teams] = -weighted_sum_defense / team_weights_defense[n_teams];
+
+  // Home advantage: last element balances weighted sum to zero
+  real weighted_sum_home = dot_product(team_weights_home[1:(n_teams - 1)], home_advantage_free);
+  home_advantage[n_teams] = -weighted_sum_home / team_weights_home[n_teams];
 }
 
 model {

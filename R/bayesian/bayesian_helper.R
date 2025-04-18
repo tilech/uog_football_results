@@ -10,6 +10,35 @@ run_model_bay <- function(data, start_season, prediction_season) {
   teams <- unique(c(data_train$HomeTeam, data_train$AwayTeam))
   team_idx <- setNames(seq_along(teams), teams)
   
+  n_teams <- length(teams)
+  
+  # Step 2: Count appearances per team
+  team_appearance_counts <- data.frame(
+    team = teams,
+    idx = seq_along(teams),
+    home_games = sapply(teams, function(t) sum(data_train$HomeTeam == t)),
+    away_games = sapply(teams, function(t) sum(data_train$AwayTeam == t))
+  ) %>%
+    mutate(
+      total_games = home_games + away_games
+    )
+  
+  # Step 3: Normalize to sum to 1 — these are your weights
+  team_weights_home <- team_appearance_counts$home_games
+  team_weights_attack <- team_appearance_counts$total_games
+  team_weights_defense <- team_appearance_counts$total_games
+  
+  # To avoid divide-by-zero if any team has 0 appearances
+  epsilon <- 1e-8
+  team_weights_home <- team_weights_home + epsilon
+  team_weights_attack <- team_weights_attack + epsilon
+  team_weights_defense <- team_weights_defense + epsilon
+  
+  # Normalize so the sum equals 1
+  team_weights_home <- team_weights_home / sum(team_weights_home)
+  team_weights_attack <- team_weights_attack / sum(team_weights_attack)
+  team_weights_defense <- team_weights_defense / sum(team_weights_defense)
+  
   # Compile the Stan model
   stan_model <- stan_model("R/bayesian/bayesian.stan")
   
@@ -20,7 +49,10 @@ run_model_bay <- function(data, start_season, prediction_season) {
     home_team = team_idx[data_train$HomeTeam],
     away_team = team_idx[data_train$AwayTeam],
     home_goals = data_train$FTHG,
-    away_goals = data_train$FTAG
+    away_goals = data_train$FTAG,
+    team_weights_home = team_weights_home,
+    team_weights_attack = team_weights_attack,
+    team_weights_defense = team_weights_defense
   )
   
   init_fun <- function() {
