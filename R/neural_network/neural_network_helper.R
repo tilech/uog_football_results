@@ -152,7 +152,7 @@ run_model_nn <- function(data, start_season, prediction_season, model) {
   history <- model %>% fit(
     train_features_scaled,
     train_labels,
-    epochs = 25,
+    epochs = 100,
     batch_size = 128,
     validation_split = 0.2,  # Use a validation set
     callbacks = list(
