@@ -9,36 +9,7 @@ run_model_bay <- function(data, start_season, prediction_season) {
   
   teams <- unique(c(data_train$HomeTeam, data_train$AwayTeam))
   team_idx <- setNames(seq_along(teams), teams)
-  
-  n_teams <- length(teams)
-  
-  # Step 2: Count appearances per team
-  team_appearance_counts <- data.frame(
-    team = teams,
-    idx = seq_along(teams),
-    home_games = sapply(teams, function(t) sum(data_train$HomeTeam == t)),
-    away_games = sapply(teams, function(t) sum(data_train$AwayTeam == t))
-  ) %>%
-    mutate(
-      total_games = home_games + away_games
-    )
-  
-  # Step 3: Normalize to sum to 1 — these are your weights
-  team_weights_home <- team_appearance_counts$home_games
-  team_weights_attack <- team_appearance_counts$total_games
-  team_weights_defense <- team_appearance_counts$total_games
-  
-  # To avoid divide-by-zero if any team has 0 appearances
-  epsilon <- 1e-8
-  team_weights_home <- team_weights_home + epsilon
-  team_weights_attack <- team_weights_attack + epsilon
-  team_weights_defense <- team_weights_defense + epsilon
-  
-  # Normalize so the sum equals 1
-  team_weights_home <- team_weights_home / sum(team_weights_home)
-  team_weights_attack <- team_weights_attack / sum(team_weights_attack)
-  team_weights_defense <- team_weights_defense / sum(team_weights_defense)
-  
+
   # Compile the Stan model
   stan_model <- stan_model("R/bayesian/bayesian.stan")
   
@@ -49,10 +20,7 @@ run_model_bay <- function(data, start_season, prediction_season) {
     home_team = team_idx[data_train$HomeTeam],
     away_team = team_idx[data_train$AwayTeam],
     home_goals = data_train$FTHG,
-    away_goals = data_train$FTAG,
-    team_weights_home = team_weights_home,
-    team_weights_attack = team_weights_attack,
-    team_weights_defense = team_weights_defense
+    away_goals = data_train$FTAG
   )
   
   init_fun <- function() {
@@ -102,64 +70,11 @@ run_model_bay <- function(data, start_season, prediction_season) {
     away_goals <- numeric(n_samples)
     
     for (j in 1:n_samples) {
-      #home_goals[j] <- rpois(1, exp(post_attack[j, home_team] - 
-      #                                post_defense[j, away_team] + 
-      #                                post_home_advantage[j, home_team]))
-      #away_goals[j] <- rpois(1, exp(post_attack[j, away_team] - 
-      #                                post_defense[j, home_team]))
-      lambda <- exp(post_attack[j, home_team] - post_defense[j, away_team] + post_home_advantage[j, home_team])
-      mu <- exp(post_attack[j, away_team] - post_defense[j, home_team])
-      rho_adj <- post_rho[j]  
-      
-      # Compute Poisson probabilities
-      p_00 <- dpois(0, lambda) * dpois(0, mu)
-      p_10 <- dpois(1, lambda) * dpois(0, mu)
-      p_01 <- dpois(0, lambda) * dpois(1, mu)
-      p_11 <- dpois(1, lambda) * dpois(1, mu)
-      
-      # Apply Dixon-Coles adjustments
-      p_00 <- p_00 * (1 - lambda * mu * rho_adj)
-      p_10 <- p_10 * (1 + mu * rho_adj)
-      p_01 <- p_01 * (1 + lambda * rho_adj)
-      p_11 <- p_11 * (1 - rho_adj)
-      
-      # Ensure probabilities are non-negative
-      p_00 <- max(p_00, 0)
-      p_10 <- max(p_10, 0)
-      p_01 <- max(p_01, 0)
-      p_11 <- max(p_11, 0)
-      
-      # Compute probability of falling into the low-score category
-      p_low_score <- p_00 + p_10 + p_01 + p_11
-      
-      # Normalize low-score probabilities
-      p_00 <- p_00 / p_low_score
-      p_10 <- p_10 / p_low_score
-      p_01 <- p_01 / p_low_score
-      p_11 <- p_11 / p_low_score
-      
-      # Decide if we should sample from low-score outcomes
-      u <- runif(1)
-      if (u < p_low_score) {
-        v <- runif(1)
-        if (v < p_00) {
-          home_goals[j] <- 0
-          away_goals[j] <- 0
-        } else if (v < p_00 + p_10) {
-          home_goals[j] <- 1
-          away_goals[j] <- 0
-        } else if (v < p_00 + p_10 + p_01) {
-          home_goals[j] <- 0
-          away_goals[j] <- 1
-        } else {
-          home_goals[j] <- 1
-          away_goals[j] <- 1
-        }
-      } else {
-        # If outside low-score adjustment, sample from regular Poisson distributions
-        home_goals[j] <- rpois(1, lambda)
-        away_goals[j] <- rpois(1, mu)
-      }
+      home_goals[j] <- rpois(1, exp(post_attack[j, home_team] - 
+                                      post_defense[j, away_team] + 
+                                      post_home_advantage[j, home_team]))
+      away_goals[j] <- rpois(1, exp(post_attack[j, away_team] - 
+                                      post_defense[j, home_team]))
     }
     
     # Calculate probabilities
