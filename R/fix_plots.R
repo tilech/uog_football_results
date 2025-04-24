@@ -17,6 +17,34 @@ ggplot(data_plot, aes(x = Defense, y = Attack, label = Team)) +
   scale_color_manual(values = team_colors) +
   theme(legend.position="none")
 
+data_plot <- dixon_coles_model$scatter_comp_plot$data
+ggplot(data_plot, aes(x = rank.actual, y = rank.predicted, label = team)) +
+  geom_point(aes(color = team), size = 3) +
+  geom_text_repel(vjust = 1.5, hjust = 0.5, size = 3, max.overlaps = 10) +  # Keep text in default color
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+  scale_color_manual(values = team_colors) +  # Use team colors for points
+  labs(x = "Actual Rank", 
+       y = "Predicted Rank",
+       color = "Team") +  # Keep only the color legend
+  theme_minimal(base_size = 18) +
+  theme(legend.position="none")
+
+data_plot <- dixon_coles_model$bar_comp_plot$data
+ggplot(data_plot, aes(x = reorder(team, points.actual))) +
+  geom_point(aes(y = points.actual, shape = "Actual", color = team), size = 3) +
+  geom_point(aes(y = points.predicted, shape = "Predicted", color = team), size = 3) +
+  geom_segment(aes(y = points.actual, yend = points.predicted, xend = reorder(team, points.actual), color = team), size = 1) +
+  scale_color_manual(values = team_colors, guide = "none") +
+  scale_shape_manual(values = c("Actual" = 16, "Predicted" = 17)) +
+  labs(x = "",
+       y = "Points",
+       shape = NULL) +
+  theme_minimal(base_size = 18) +
+  coord_flip() +
+  theme(legend.position = c(0.75, 0.15),
+        legend.background = element_rect(fill = "white", color = "black"),
+        legend.text = element_text(size = 18))
+
 data_plot <- baio_blangiardo_model$grid_search_plot$data
 n<-dim(data_plot)[1]
 data_plot<-data_plot[1:(n-1),]
@@ -43,6 +71,34 @@ ggplot(data_plot, aes(x = Team, y = DefenseStrength)) +
   labs(x = "", y = "Defense Strength") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+data_plot <- baio_blangiardo_model$scatter_comp_plot$data
+ggplot(data_plot, aes(x = rank.actual, y = rank.predicted, label = team)) +
+  geom_point(aes(color = team), size = 3) +
+  geom_text_repel(vjust = 1.5, hjust = 0.5, size = 3, max.overlaps = 10) +  # Keep text in default color
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+  scale_color_manual(values = team_colors) +  # Use team colors for points
+  labs(x = "Actual Rank", 
+       y = "Predicted Rank",
+       color = "Team") +  # Keep only the color legend
+  theme_minimal(base_size = 18) +
+  theme(legend.position="none")
+
+data_plot <- baio_blangiardo_model$bar_comp_plot$data
+ggplot(data_plot, aes(x = reorder(team, points.actual))) +
+  geom_point(aes(y = points.actual, shape = "Actual", color = team), size = 3) +
+  geom_point(aes(y = points.predicted, shape = "Predicted", color = team), size = 3) +
+  geom_segment(aes(y = points.actual, yend = points.predicted, xend = reorder(team, points.actual), color = team), size = 1) +
+  scale_color_manual(values = team_colors, guide = "none") +
+  scale_shape_manual(values = c("Actual" = 16, "Predicted" = 17)) +
+  labs(x = "",
+       y = "Points",
+       shape = NULL) +
+  theme_minimal(base_size = 18) +
+  coord_flip() +
+  theme(legend.position = c(0.75, 0.15),
+        legend.background = element_rect(fill = "white", color = "black"),
+        legend.text = element_text(size = 18))
 
 data_plot <- bayesian_model$grid_search_plot$data
 n<-dim(data_plot)[1]
@@ -77,3 +133,60 @@ ggplot(data_plot, aes(x = Team, y = HomeTeamAdvantage)) +
   labs(x = "", y = "Home Team Advantage") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+data_plot <- bayesian_model$scatter_comp_plot$data
+ggplot(data_plot, aes(x = rank.actual, y = rank.predicted, label = team)) +
+  geom_point(aes(color = team), size = 3) +
+  geom_text_repel(vjust = 1.5, hjust = 0.5, size = 3, max.overlaps = 10) +  # Keep text in default color
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+  scale_color_manual(values = team_colors) +  # Use team colors for points
+  labs(x = "Actual Rank", 
+       y = "Predicted Rank",
+       color = "Team") +  # Keep only the color legend
+  theme_minimal(base_size = 18) +
+  theme(legend.position="none")
+
+data_plot <- bayesian_model$bar_comp_plot$data
+ggplot(data_plot, aes(x = reorder(team, points.actual))) +
+  geom_point(aes(y = points.actual, shape = "Actual", color = team), size = 3) +
+  geom_point(aes(y = points.predicted, shape = "Predicted", color = team), size = 3) +
+  geom_segment(aes(y = points.actual, yend = points.predicted, xend = reorder(team, points.actual), color = team), size = 1) +
+  scale_color_manual(values = team_colors, guide = "none") +
+  scale_shape_manual(values = c("Actual" = 16, "Predicted" = 17)) +
+  labs(x = "",
+       y = "Points",
+       shape = NULL) +
+  theme_minimal(base_size = 18) +
+  coord_flip() +
+  theme(legend.position = c(0.75, 0.15),
+        legend.background = element_rect(fill = "white", color = "black"),
+        legend.text = element_text(size = 18))
+
+data_plot <- neural_network_model$scatter_comp_plot$data
+ggplot(data_plot, aes(x = rank.actual, y = rank.predicted, label = team)) +
+  geom_point(aes(color = team), size = 3) +
+  geom_text_repel(vjust = 1.5, hjust = 0.5, size = 3, max.overlaps = 10) +  # Keep text in default color
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+  scale_color_manual(values = team_colors) +  # Use team colors for points
+  labs(x = "Actual Rank", 
+       y = "Predicted Rank",
+       color = "Team") +  # Keep only the color legend
+  theme_minimal(base_size = 18) +
+  theme(legend.position="none")
+
+data_plot <- neural_network_model$bar_comp_plot$data
+ggplot(data_plot, aes(x = reorder(team, points.actual))) +
+  geom_point(aes(y = points.actual, shape = "Actual", color = team), size = 3) +
+  geom_point(aes(y = points.predicted, shape = "Predicted", color = team), size = 3) +
+  geom_segment(aes(y = points.actual, yend = points.predicted, xend = reorder(team, points.actual), color = team), size = 1) +
+  scale_color_manual(values = team_colors, guide = "none") +
+  scale_shape_manual(values = c("Actual" = 16, "Predicted" = 17)) +
+  labs(x = "",
+       y = "Points",
+       shape = NULL) +
+  theme_minimal(base_size = 18) +
+  coord_flip() +
+  theme(legend.position = c(0.75, 0.15),
+        legend.background = element_rect(fill = "white", color = "black"),
+        legend.text = element_text(size = 18))
+
