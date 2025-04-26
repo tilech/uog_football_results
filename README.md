@@ -18,7 +18,7 @@ This project focuses on analyzing football match results from the German Bundesl
 
 ## Usage
 
-The input data can be found in the data directory and was retrieved from [https://www.football-data.co.uk/data.php](https://www.football-data.co.uk/data.php). After opening the project in RStudio, you can run the modeling script via the main file in R directory.
+The input data can be found in the data directory and was retrieved from [https://www.football-data.co.uk/data.php](https://www.football-data.co.uk/data.php). After opening the project in RStudio, you can run the modeling script via the main file in the R directory.
 Various parameters like the prediction season or time decay can be set in the beginning.
 One can choose to run individual models or grid searches for different parameters.
 The outcomes are given as lists including the prediction results, plots and evaluation metrics.
