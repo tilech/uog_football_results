@@ -58,32 +58,12 @@ baio_blangiardo_model <- run_baio_blangiardo_model(
     prediction_season_grid_search
 )
 
-baio_blangiardo_model_final <- run_baio_blangiardo_model(
-  data,
-  2012, 
-  prediction_season,
-  FALSE,
-  grid_search_from_bay,
-  grid_search_to_bay,
-  prediction_season_grid_search
-)
-
 # Run Bayesian model
 bayesian_model <- run_bayesian_model(
   data,
   start_season, 
   prediction_season,
   grid_search,
-  grid_search_from_bay,
-  grid_search_to_bay,
-  prediction_season_grid_search
-)
-
-bayesian_model_final <- run_bayesian_model(
-  data,
-  2013, 
-  prediction_season,
-  FALSE,
   grid_search_from_bay,
   grid_search_to_bay,
   prediction_season_grid_search
@@ -133,6 +113,7 @@ plot_names <- list(
     "grid_search_plot",
     "hta_plot",
     "ad_plot",
+    "rho_plot",
     "mcmc_trace_plot",
     "mcmc_acf_plot",
     "mcmc_dens_overlay_plot"
@@ -179,10 +160,3 @@ for (model_name in names(plot_names)) {
     }
   }
 }
-
-rho_plot <- plot_rho(bayesian_model$opt_params)
-
-
-
-
-

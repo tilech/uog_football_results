@@ -18,10 +18,10 @@ This project focuses on analyzing football match results from the German Bundesl
 
 ## Usage
 
-After opening the project in RStudio, you can run the modeling script via the main file.
-Variuous parameters like the prediction season or time decay can be set in the beginning.
+After opening the project in RStudio, you can run the modeling script via the main file in R directory.
+Various parameters like the prediction season or time decay can be set in the beginning.
 One can choose to run individual models or grid searches for different parameters.
-The outcomes are given as lists inlcuding the prediction results, plots and evaulation metrics.
+The outcomes are given as lists including the prediction results, plots and evaluation metrics.
 
 ---
 **Note:** Contributions are currently not being accepted for this project.
